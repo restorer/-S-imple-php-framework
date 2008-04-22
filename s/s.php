@@ -34,6 +34,7 @@ if (!conf_has('format.date')) conf_set('format.date', 'd.m.Y');
 if (!conf_has('format.datetime')) conf_set('format.datetime', 'd.m.Y H:i');
 if (!conf_has('regexp.date')) conf_set('regexp.date', '/^(\d\d).(\d\d).(\d\d\d\d)$/');
 if (!conf_has('regexp.datetime')) conf_set('regexp.datetime', '/^(\d\d).(\d\d).(\d\d\d\d).(\d\d):(\d\d)(:(\d\d))?$/');
+if (!conf_has('cache.path')) conf_set('cache_path', BASE.'cache/');
 
 conf_set('log.path', expand_tilde(conf('log.path')));
 

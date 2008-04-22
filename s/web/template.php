@@ -312,7 +312,7 @@ class STemplate
 		}
 
 		$dir = substr(dirname($filename), strlen(BASE));
-		$rdir = BASE.'cache/'.$dir;
+		$rdir = conf('cache.path').$dir;
 		if ($dir!='' && !is_dir($rdir)) make_directory($rdir);
 
 		if (substr($rdir, -1) != '/') $rdir .= '/';

@@ -172,15 +172,15 @@ class SDBCommand
 	var $params = array();
 	var $limit = array();
 
-	function SDBCommand($command='', &$db=null)
+	function SDBCommand($command='', $db=null)
 	{
 		$this->__construct($command, $db);
 	}
 
 	##
-	# = void __construct(string $command='', SDBBase &$db=null)
+	# = void __construct(string $command='', SDBBase $db=null)
 	##
-	function __construct($command='', &$db=null)
+	function __construct($command='', $db=null)
 	{
 		$this->command = $command;
 		$this->db = ($db!==null ? $db : SDB::get_current());
