@@ -1,0 +1,20 @@
+<?php
+
+/*
+ * [S]imple framework
+ * 2007-2008 Zame Software Development (http://zame-dev.org)
+ * All rights reserved
+ *
+ * Main file for apps.
+ * When many apps use one framework, place framework into separate folder and rename s.php.apps to s.php
+ */
+
+/*
+ * Path to [S]imple framework (with ending slash)
+ */
+define('S_BASE', '/path/to/s/framework/');
+
+define('BASE', str_replace('\\', '/', substr(__FILE__, 0, strlen(__FILE__) - strlen('s/s.php'))));
+require_once(S_BASE.'s.php');
+
+?>
