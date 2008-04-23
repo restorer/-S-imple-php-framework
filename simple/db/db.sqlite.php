@@ -192,6 +192,7 @@ class SDBSQLite extends SDBBase
 				/* virtual types */
 
 				case 'DATE'       : $tp = DB_Date;     break;
+				case 'DATETIME'   : $tp = DB_DateTime; break;
 				case 'DECIMAL'    : $tp = DB_Float;    break;
 
 				/* no proper type found */

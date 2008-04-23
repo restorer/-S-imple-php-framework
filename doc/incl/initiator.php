@@ -29,7 +29,7 @@ class Initiator
 			{
 				$cmd =& new SDBCommand($sql);
 				$cmd->execute();
-	        }
+			}
 
 			SDB::reset_cached_data();
 
