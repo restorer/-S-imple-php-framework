@@ -39,7 +39,7 @@ class Initiator
 			$fl->type = FILEITEM_FOLDER;
 			$fl->save();
 
-	        Initiator::fill_db(BASE.'s', $fl->get_id());
+	        Initiator::fill_db(S_BASE, $fl->get_id());
 		}
 	}
 

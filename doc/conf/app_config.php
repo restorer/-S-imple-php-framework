@@ -5,7 +5,7 @@ conf_set('debug', array_key_exists('gimmedebug', $_GET));
 
 conf_set('sitename', 'zame-dev.org');
 conf_set('domain', 'localhost');
-conf_set('http.root', '/simple/');
+conf_set('http.root', '/simple/doc/');
 
 /* conf_set('http.port', 80); */
 /* conf_set('ssl.root', '/php-framework/'); */
