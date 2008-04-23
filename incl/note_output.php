@@ -2,6 +2,11 @@
 
 class NoteOutput extends SControl
 {
+	function NoteOutput()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		$this->set_template(__FILE__);

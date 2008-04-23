@@ -2,6 +2,11 @@
 
 class BlockOutput extends SControl
 {
+	function BlockOutput()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		$this->set_template(__FILE__);

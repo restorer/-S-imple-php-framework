@@ -2,6 +2,11 @@
 
 class FileOutput extends SControl
 {
+	function FileOutput()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		$this->set_template(__FILE__);

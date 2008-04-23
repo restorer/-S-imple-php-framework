@@ -9,6 +9,11 @@ require_once('incl/note_output.php');
 
 class IndexPage extends SPage
 {
+	function IndexPage()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		parent::__construct();

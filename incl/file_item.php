@@ -9,6 +9,11 @@ class FileItem extends SDBEntity
 	var $name = '';
 	var $type = 0;
 
+	function FileItem()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		parent::__construct(true);

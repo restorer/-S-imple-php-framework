@@ -6,6 +6,11 @@ class NoteItem extends SDBEntity
 	var $name = '';
 	var $description = '';
 
+	function NoteItem()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		parent::__construct(true);

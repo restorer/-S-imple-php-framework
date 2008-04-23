@@ -8,6 +8,11 @@ class BlockItem extends SDBEntity
 	var $text = '';
 	var $example = '';
 
+	function BlockItem()
+	{
+		$this->__construct();
+	}
+
 	function __construct()
 	{
 		parent::__construct(true);
