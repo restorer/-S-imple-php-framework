@@ -47,12 +47,11 @@ class STemplate
 	}
 
 	##
-	# = void parse(string $in, string $out)
+	# = void parse(string $in, string $funcname)
 	# [$in] Parse from file
-	# [$out] Write output to file
-	# **TODO:** Wrap result into function
+	# [$funcname] Wrapper function name
 	##
-	function parse($in, $out)
+	function parse($in, $funcname)
 	{
 		$buf = file_get_contents($in);
 		$buf = str_replace(chr(0x0D), chr(0x0A), str_replace(chr(0x0A).chr(0x0D), chr(0x0A), str_replace(chr(0x0D).chr(0x0A), chr(0x0A), $buf)));
@@ -186,8 +185,8 @@ class STemplate
 
 							if (preg_match('/^[A-Za-z0-9_]+\s*\(/', $cnt))
 							{
-								$stat = preg_replace('/^@([A-Za-z0-9_]+)\s*\(\s*\)/', '$this->call(\'$1\');', '@'.$cnt);
-								$stat = preg_replace('/^@([A-Za-z0-9_]+)\s*\((.*)/', '$this->call(\'$1\',$2;', $stat);
+								$stat = preg_replace('/^@([A-Za-z0-9_]+)\s*\(\s*\)/', '$__t->call(\'$1\');', '@'.$cnt);
+								$stat = preg_replace('/^@([A-Za-z0-9_]+)\s*\((.*)/', '$__t->call(\'$1\',$2;', $stat);
 							}
 							else
 							{
@@ -198,9 +197,9 @@ class STemplate
 								{
 									$args = trim($spl[1]);
 									if ($args{0} == ':') { $args = 'array('.$args.')'; }
-									$stat = '$__s.=$this->call(\'' . $name . '\',' . $args . ');';
+									$stat = '$__s.=$__t->call(\'' . $name . '\',' . $args . ');';
 								}
-								else { $stat = '$__s.=$this->call(\'' . $name . '\');'; }
+								else { $stat = '$__s.=$__t->call(\'' . $name . '\');'; }
 							}
 						}
 						else
@@ -236,8 +235,8 @@ class STemplate
 
 					if ($post_process)
 					{
-						$stat = preg_replace('/@\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/', '$this->call(\'$1\')', $stat);
-						$stat = preg_replace('/@\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(/', '$this->call(\'$1\',', $stat);
+						$stat = preg_replace('/@\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/', '$__t->call(\'$1\')', $stat);
+						$stat = preg_replace('/@\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(/', '$__t->call(\'$1\',', $stat);
 						$stat = preg_replace('/([ \(,]):([A-Za-z_][A-Za-z0-9_]*)\s*=>/', '$1\'$2\'=>', $stat);
 					}
 
@@ -249,12 +248,8 @@ class STemplate
 		$text = $this->i_escape($text);
 		if (strlen($text)) $res .= '$__s.=' . $text . ";\n";
 
-		if ($fp = fopen($out, 'wb'))
-		{
-			fwrite($fp, '<'.'?'.'php'."\n" . $res . '?'.'>');
-			fclose($fp);
-			chmod($out, 0777);
-		}
+		$res = 'function '.$funcname.'($__t,$__v){foreach($__v as $__k=>$__v) $$__k=$__v;$__s=\'\';'."\n".$res.'return $__s;'."\n}\n";
+		return $res;
 	}
 
 	function _echo()
@@ -279,18 +274,37 @@ class STemplate
 		}
 	}
 
-	##
-	# = string render(string $__s_filename)
-	# [$__s_filename] Path to compiled template
-	# In most cases, you don't need to call this functions
-	# **TODO:** Depends on **'wrap result into function'**. Don't load already loaded templates. Will boost perfomance when template recursivelly load itself
-	##
-	function render($__s_filename)
+	function i_generate_funcname($filename)
 	{
-		foreach ($this->vars as $__s_k=>$__s_v) $$__s_k = $__s_v;
-		$__s = '';
-		require($__s_filename);
-		return $__s;
+		$str = '2e_' . strtolower(substr($filename, strlen(BASE))) . './.';
+		$prev = false;
+		$funcname = '';
+
+		for ($i = 0; $i < strlen($str); $i++)
+		{
+			$ch = $str{$i};
+
+			if (($ch>='0' && $ch<='9') || ($ch>='a' && $ch<='z'))
+			{
+				$funcname .= $ch;
+				$prev = true;
+			}
+			else
+			{
+				if ($prev)
+				{
+					$funcname .= '_';
+					$prev = false;
+				}
+
+				$funcname .= sprintf('%02x', ord($ch)).'_';
+			}
+		}
+
+		if (substr($funcname, -1) == '_') $funcname = substr($funcname, 0, -1);
+
+		$funcname = '__s_tpl_'.$funcname;
+		return $funcname;
 	}
 
 	##
@@ -311,24 +325,47 @@ class STemplate
 			$s_runconf->set('tpl.nested', $nested);
 		}
 
-		$dir = substr(dirname($filename), strlen(BASE));
-		$rdir = conf('cache.path').$dir;
-		if ($dir!='' && !is_dir($rdir)) make_directory($rdir);
+		$funcname = $this->i_generate_funcname($filename);
 
-		if (substr($rdir, -1) != '/') $rdir .= '/';
-		$rname = $rdir.basename($filename).'.php';
-		$mt = filemtime($filename);
-		$mk = true;
-
-		if (!file_exists($rname) || filemtime($rname)<$mt)
+		if (!function_exists($funcname))
 		{
-			dwrite('Parsing template "'.$rname.'"', S_ACCENT);
-			$this->parse($filename, $rname);
+			$dir = substr(dirname($filename), strlen(BASE));
+			$rdir = conf('cache.path').$dir;
+			if ($dir!='' && !is_dir($rdir)) make_directory($rdir);
+
+			if (substr($rdir, -1) != '/') $rdir .= '/';
+			$rname = $rdir.basename($filename).'.php';
+			$mt = filemtime($filename);
+			$mk = true;
+
+			if (!file_exists($rname) || filemtime($rname)<$mt)
+			{
+				dwrite('Parsing template "'.$rname.'"', S_ACCENT);
+				$parsed = $this->parse($filename, $funcname);
+
+				if ($fp = @fopen($rname, 'wb'))
+				{
+					fwrite($fp, '<'.'?'.'php'."\n" . $parsed . '?'.'>');
+					fclose($fp);
+					chmod($rname, 0777);
+				}
+				else
+				{
+					dwrite("Can't write template to \"$rname\"", S_ERROR);
+				}
+
+				eval($parsed);
+			}
+			else
+			{
+				dwrite('Loading template "'.$rname.'"', S_ACCENT);
+				require($rname);
+			}
 		}
 
 		if (DEBUG)
 		{
-			$res = $this->render($rname, $this->vars);
+			$res = call_user_func($funcname, $this, $this->vars);
 			$dt = get_microtime() - $st;
 
 			$nested = $s_runconf->get('tpl.nested');
@@ -342,7 +379,7 @@ class STemplate
 		}
 		else
 		{
-			return $this->render($rname, $this->vars);
+			return call_user_func($funcname, $this, $this->vars);
 		}
 	}
 }
