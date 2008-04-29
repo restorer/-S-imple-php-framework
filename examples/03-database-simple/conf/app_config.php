@@ -19,7 +19,7 @@ conf_set('db.name', 'some-database');
 */
 
 conf_set('db.type', 'sqlite');
-conf_set('db.name', '~../common/examples.sqlite');
+conf_set('db.name', '~../common/cache/examples.sqlite');
 
 /* conf_set('db.prefix', 'table_prefix_'); */
 /* conf_set('page.show_vars', true); */
