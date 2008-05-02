@@ -22,5 +22,3 @@ if (!count(SDB::get_tables_list()))
 
 	SDB::reset_cached_data();
 }
-
-?>

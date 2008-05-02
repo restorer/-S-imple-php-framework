@@ -31,5 +31,3 @@ conf_set('log.path', '~debug.log');
 conf_set('modules.autoload', array(
 	'db/db'
 ));
-
-?>

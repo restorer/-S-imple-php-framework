@@ -34,5 +34,3 @@ if (InPOST('try_again'))
 
 echo $tpl->process(BASE.'index.tpl');
 dflush();
-
-?>

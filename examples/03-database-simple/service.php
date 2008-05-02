@@ -50,5 +50,3 @@ switch (_GET('action'))
 }
 
 dflush();
-
-?>
