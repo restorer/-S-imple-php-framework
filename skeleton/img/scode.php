@@ -196,5 +196,3 @@ $_SESSION["secret_code"] = $arr[1];
 header("Content-type: image/jpeg");
 ImageJPEG($arr[0], '', 50);
 ImageDestroy($arr[0]);
-
-?>

@@ -156,5 +156,3 @@ function conf_sub($path)
 	global $s_config;
 	return $s_config->sub($path);
 }
-
-?>

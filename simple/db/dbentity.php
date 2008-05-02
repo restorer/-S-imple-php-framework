@@ -521,5 +521,3 @@ class SDBEntity extends SEntity
 ##
 # .end
 ##
-
-?>

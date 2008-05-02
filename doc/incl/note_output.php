@@ -21,5 +21,3 @@ class NoteOutput extends SControl
 		return $this->render_template();
 	}
 }
-
-?>

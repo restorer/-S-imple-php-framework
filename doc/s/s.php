@@ -13,5 +13,3 @@
 define('BASE', str_replace('\\', '/', substr(__FILE__, 0, strlen(__FILE__) - strlen('s/s.php'))));
 define('S_BASE', BASE.'../simple/');
 require_once(S_BASE.'s.php');
-
-?>

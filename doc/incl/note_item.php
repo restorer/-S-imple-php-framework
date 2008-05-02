@@ -19,5 +19,3 @@ class NoteItem extends SDBEntity
 
 	function &block() { return $this->get_rel('block'); }
 }
-
-?>

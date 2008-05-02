@@ -209,5 +209,3 @@ class SDBSQLite extends SDBBase
 ##
 # .end
 ##
-
-?>

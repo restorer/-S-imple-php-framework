@@ -234,5 +234,3 @@ class SEmail
 ##
 # .end
 ##
-
-?>

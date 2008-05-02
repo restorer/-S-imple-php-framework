@@ -422,5 +422,3 @@ class SDBBase
 ##
 # .end
 ##
-
-?>

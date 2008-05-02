@@ -414,5 +414,3 @@ function __log($msg, $nl=true)
 	if ($nl) fwrite($fp, "\n");
 	fclose($fp);
 }
-
-?>

@@ -58,5 +58,3 @@ if (conf_has('modules.autoload'))
 		else { require_once(S_BASE.$name.'/all.php'); }
 	}
 }
-
-?>

@@ -28,5 +28,3 @@ class BlockItem extends SDBEntity
 	function &file() { return $this->get_rel('file'); }
 	function &notes() { return $this->get_rel('notes'); }
 }
-
-?>

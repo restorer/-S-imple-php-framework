@@ -21,5 +21,3 @@ class BlockOutput extends SControl
 		return $this->render_template();
 	}
 }
-
-?>

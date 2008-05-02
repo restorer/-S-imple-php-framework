@@ -33,5 +33,3 @@ conf_set('modules.autoload', array(
 	'db',
 	'web'
 ));
-
-?>

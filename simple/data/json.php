@@ -268,5 +268,3 @@ class JsonObject extends JsonBase
 ##
 # .end
 ##
-
-?>

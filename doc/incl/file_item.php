@@ -27,5 +27,3 @@ class FileItem extends SDBEntity
 	function &childs() { return $this->get_rel('childs'); }
 	function &blocks() { return $this->get_rel('blocks'); }
 }
-
-?>

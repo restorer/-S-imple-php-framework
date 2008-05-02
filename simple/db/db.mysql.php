@@ -203,5 +203,3 @@ class SDBMySql extends SDBBase
 ##
 # .end
 ##
-
-?>

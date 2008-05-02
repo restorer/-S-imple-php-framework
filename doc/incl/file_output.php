@@ -21,5 +21,3 @@ class FileOutput extends SControl
 		return $this->render_template();
 	}
 }
-
-?>

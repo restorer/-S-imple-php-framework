@@ -91,5 +91,3 @@ class SDates
 ##
 # .end
 ##
-
-?>
