@@ -345,7 +345,7 @@ class STemplate
 
 				if ($fp = @fopen($rname, 'wb'))
 				{
-					fwrite($fp, '<'.'?'.'php'."\n" . $parsed . '?'.'>');
+					fwrite($fp, '<'.'?'.'php'."\n" . $parsed);		// closing php tag is not necessary
 					fclose($fp);
 					chmod($rname, 0777);
 				}
