@@ -186,9 +186,7 @@ function get_microtime() {
 ##
 function microtime_to_str($tm)
 {
-	$str = (string)($tm - floor($tm));
-	$ls = substr($str, 2);
-	while (strlen($ls) < 15) $ls = $ls.'0';
+	$ls = substr(number_format($tm - floor($tm), 8), 1);
 	return (date('Y-m-d H:i:s', floor($tm)).' '.$ls);
 }
 

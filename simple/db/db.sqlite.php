@@ -41,11 +41,6 @@ class SDBSQLite extends SDBBase
 		return $sql;
 	}
 
-	function i_parse(&$cmd)
-	{
-		return $this->i_parse_cmd($cmd, "'", '"', '"');
-	}
-
 	function i_run_query($sql, $is_exec)
 	{
 		$res = array();
@@ -74,15 +69,20 @@ class SDBSQLite extends SDBBase
 			}
 
 			$res['error'] = ($res['result']!==false ? '' : $error_msg.'. '.sqlite_error_string($this->db->lastError()));
-			$res['affected'] = ($res['result']!==false ? max($this->db->changes(), $res['result']->numRows()) : 0);
+			$res['selected'] = ($res['result']!==false ? max($this->db->changes(), $res['result']->numRows()) : 0);
 		}
 
 		return $res;
 	}
 
-	function escape($str)
+	function quote($str)
 	{
-		return sqlite_escape_string($str);
+		return "'".sqlite_escape_string($str)."'";
+	}
+
+	function i_quote_names($name)
+	{
+		return '"'.sqlite_escape_string($name).'"';
 	}
 
 	function execute(&$cmd)

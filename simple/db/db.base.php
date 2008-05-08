@@ -52,14 +52,11 @@ class SDBBase
 	}
 
 	##
-	# = string i_parse_cmd(SDBCommand &$cmd, string $quot, string $table_quot, string $field_quot)
+	# = string i_parse(SDBCommand &$cmd)
 	# [$cmd] Command to parse
-	# [$quot] Parameters quote symbol
-	# [$table_quot] Table name quote symbol
-	# [$field_quot] Field name quote symbol
 	# **TODO:** More flexible limiting (i.e. MSSQL has no LIMIT command, but has SELECT TOP <num>)
 	##
-	function i_parse_cmd(&$cmd, $quot, $table_quot, $field_quot)
+	function i_parse(&$cmd)
 	{
 		global $s_runconf;
 		$arr = array();
@@ -85,7 +82,7 @@ class SDBBase
 						$val = substr($val, 0, $parm['s']);
 					}
 
-					$val = $quot.$this->escape($val).$quot;
+					$val = $this->quote($val);
 					break;
 
 				case DB_LikeString:
@@ -96,19 +93,19 @@ class SDBBase
 						$val = substr($val, 0, $parm['s']);
 					}
 
-					$val = $this->like_escape($val);
+					$val = $this->quote_like($val);
 					break;
 
 				case DB_Int:
 					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not DB_Int", S_ERROR);}
 					$val = intval($val);
-					$val = $quot.$val.$quot;
+					$val = $this->quote($val);
 					break;
 
 				case DB_Float:
 					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not DB_Float", S_ERROR);}
 					$val = floatval($val);
-					$val = $quot.$val.$quot;
+					$val = $this->quote($val);
 					break;
 
 				case DB_Date:
@@ -119,7 +116,7 @@ class SDBBase
 						$val = '0000-01-01';
 					}
 
-					$val = $quot.$val.$quot;
+					$val = $this->quote($val);
 					break;
 
 				case DB_DateTime:
@@ -130,12 +127,12 @@ class SDBBase
 						$val = '0000-01-01 00:00:00';
 					}
 
-					$val = $quot.$val.$quot;
+					$val = $this->quote($val);
 					break;
 
 				case DB_Blob:
 					$val = strval($val);
-					$val = $quot.$this->escape($val).$quot;
+					$val = $this->quote($val);
 					break;
 
 				case DB_StringsList:
@@ -157,7 +154,7 @@ class SDBBase
 							$rv = substr($rv, 0, $parm['s']);
 						}
 
-						$val .= ($val==''?'':',') . $quot.$this->escape($rv).$quot;
+						$val .= ($val==''?'':',') . $this->quote($rv);
 					}
 					break;
 
@@ -175,7 +172,7 @@ class SDBBase
 					{
 						if (!is_numeric($vl)) { if (DEBUG) dwrite("Some elements in parameter '$k' are not DB_Int", S_ERROR); }
 						$rv = intval($vl);
-						$val .= ($val==''?'':',') . $quot.$rv.$quot;
+						$val .= ($val==''?'':',') . $this->quote($rv);
 					}
 					break;
 
@@ -187,7 +184,7 @@ class SDBBase
 						$val = substr($val, 0, $parm['s']);
 					}
 
-					$val = $table_quot.$this->prefix.$this->escape($val).$table_quot;
+					$val = $this->quote_table($val);
 					break;
 
 				case DB_FieldName:
@@ -198,7 +195,7 @@ class SDBBase
 						$val = substr($val, 0, $parm['s']);
 					}
 
-					$val = $field_quot.$this->escape($val).$field_quot;
+					$val = $this->quote_field($val);
 					break;
 
 				default: error("Data type '".$parm['t']."' not recognized");
@@ -246,7 +243,8 @@ class SDBBase
 	# [$is_exec] false = select command, true = non-select command
 	# {$result['result']} Command result (resource or class, depending on db driver)
 	# {$result['error']} Empty string - no errors
-	# {$result['affected']} Number of affected rows
+	# {$result['affected']} Number of affected rows (for exec queries)
+	# {$result['selected']} Number of selected rows (for non-exec queries)
 	##
 	function i_run_query($sql, $is_exec)
 	{
@@ -277,7 +275,8 @@ class SDBBase
 			{
 				$dt = $t2 - $t1;
 				$s_runconf->set('time.sql.query', $s_runconf->get('time.sql.query') + $dt);
-				dwrite("<b>Success [</b>".htmlspecialchars($sql)."<b>] ".$res['affected']." rows affected</b> (".number_format($dt, 8).")", ($dt<0.1 ? S_SUCCESS : S_ACCENT));
+				$rows_str = ($is_exec ? $res['affected'].' rows affected' : $res['selected'].' rows selected');
+				dwrite("<b>Success [</b>".htmlspecialchars($sql)."<b>] $rows_str</b> (".number_format($dt, 8).")", ($dt<0.1 ? S_SUCCESS : S_ACCENT));
 			}
 		}
 		else { $res = $this->i_run_query($sql, $is_exec); }
@@ -286,24 +285,51 @@ class SDBBase
 	}
 
 	##
-	# = abstract string escape(string $str)
-	# Escape string
+	# = abstract string quote(string $str)
+	# Quote and escape string
 	##
-	function escape($str)
+	function quote($str)
 	{
-		error('SDBBase.escape must be overrided');
+		error('SDBBase.quote must be overrided');
 	}
 
 	##
-	# = string like_escape(string $str)
-	# Escape string to use in like expressions (additionally escapes '%' and '_' symbols)
+	# = abstract string i_quote_names(string $name)
+	# Quote table and field names
+	##
+	function i_quote_names($name)
+	{
+		error('SDBBase.quote_names must be overrided');
+	}
+
+	##
+	# = string quote_like(string $str)
+	# Quote (and escape) string to use in like expressions (additionally escapes '%' and '_' symbols)
 	# **TODO:** Check escaping method in sqlite
 	##
-	function like_escape($str)
+	function quote_like($str)
 	{
-		$str = $this->escape($str);
+		$str = $this->quote($str);
 		$str = str_replace(array('%', '_'), array('\\%', '\\_'), $str);
 		return $str;
+	}
+
+	##
+	# = string quote_table(string $str)
+	# Quote and escape table name
+	##
+	function quote_table($name)
+	{
+		return $this->i_quote_names($this->prefix.$name);
+	}
+
+	##
+	# = string quote_field(string $str)
+	# Quote and escape field name
+	##
+	function quote_field($name)
+	{
+		return $this->i_quote_names($name);
 	}
 
 	##

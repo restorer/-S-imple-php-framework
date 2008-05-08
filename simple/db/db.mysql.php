@@ -35,23 +35,29 @@ class SDBMySql extends SDBBase
 		if ($name != '') mysql_select_db($name, $this->conn) or error(mysql_error());
 	}
 
-	function i_parse(&$cmd)
-	{
-		return $this->i_parse_cmd($cmd, "'", '`', '`');
-	}
-
 	function i_run_query($sql, $is_exec)
 	{
 		$res = array();
 		$res['result'] = @mysql_query($sql, $this->conn);
 		$res['error'] = ($res['result'] ? '' : mysql_error($this->conn));
-		$res['affected'] = ($res['result'] ? 0 : mysql_affected_rows($this->conn));
+
+		if ($is_exec) {
+			$res['affected'] = ($res['result'] ? 0 : mysql_affected_rows($this->conn));
+		} else {
+			$res['selected'] = ($res['result'] ? 0 : mysql_num_rows($this->conn));
+		}
+
 		return $res;
 	}
 
-	function escape($str)
+	function quote($str)
 	{
-		return (function_exists('mysql_real_escape_string') ? mysql_real_escape_string($str, $this->conn) : mysql_escape_string($str));
+		return "'".(function_exists('mysql_real_escape_string') ? mysql_real_escape_string($str, $this->conn) : mysql_escape_string($str))."'";
+	}
+
+	function i_quote_names($name)
+	{
+		return '`'.(function_exists('mysql_real_escape_string') ? mysql_real_escape_string($str, $this->conn) : mysql_escape_string($name)).'`';
 	}
 
 	function execute(&$cmd)
