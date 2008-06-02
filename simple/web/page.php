@@ -495,7 +495,7 @@ class SPage
 			dwrite('Page processing takes: ' . number_format(($nw - $this->_start_time), 8));
 			dwrite('SQL parsing takes: ' . number_format($s_runconf->get('time.sql.parse'), 8));
 			dwrite('SQL queries takes: ' . number_format($s_runconf->get('time.sql.query'), 8));
-			dwrite('Templates takes: ' . number_format($s_runconf->get('time.template'), 8) . ' (approx)');
+			dwrite('Templates takes: ' . number_format($s_runconf->get('time.template'), 8) . ' (approx, including sql and template loading)');
 			dflush();
 		}
 	}
