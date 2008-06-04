@@ -42,9 +42,9 @@ class SDBMySql extends SDBBase
 		$res['error'] = ($res['result'] ? '' : mysql_error($this->conn));
 
 		if ($is_exec) {
-			$res['affected'] = ($res['result'] ? 0 : mysql_affected_rows($this->conn));
+			$res['affected'] = ($res['result'] ? mysql_affected_rows($this->conn) : 0);
 		} else {
-			$res['selected'] = ($res['result'] ? 0 : mysql_num_rows($this->conn));
+			$res['selected'] = ($res['result'] ? mysql_num_rows($res['result']) : 0);
 		}
 
 		return $res;
