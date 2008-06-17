@@ -213,10 +213,10 @@ class SDBCommand
 	}
 
 	##
-	# = void set_limit(int $from, int $count)
+	# = void set_limit(int $from_or_count, int $count=null)
 	##
-	function set_limit($from, $count) {
-		$this->limit = array($from, $count);
+	function set_limit($from_or_count, $count=null) {
+		$this->limit = ($count!==null ? array($from_or_count, $count) : array($from_or_count));
 	}
 
 	##

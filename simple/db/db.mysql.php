@@ -57,7 +57,7 @@ class SDBMySql extends SDBBase
 
 	function i_quote_names($name)
 	{
-		return '`'.(function_exists('mysql_real_escape_string') ? mysql_real_escape_string($str, $this->conn) : mysql_escape_string($name)).'`';
+		return '`'.(function_exists('mysql_real_escape_string') ? mysql_real_escape_string($name, $this->conn) : mysql_escape_string($name)).'`';
 	}
 
 	function execute(&$cmd)
