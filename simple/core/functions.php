@@ -379,6 +379,29 @@ function _COOKIE($k, $def='') {
 }
 
 ##
+# = mixed _SERVER(string $k, mixed $def='')
+##
+function _SERVER($k, $def='')
+{
+	// begin of code taken from PHPMailer class
+	global $HTTP_SERVER_VARS;
+	global $HTTP_ENV_VARS;
+
+	if (!isset($_SERVER))
+	{
+		$_SERVER = $HTTP_SERVER_VARS;
+
+		if (!isset($_SERVER['REMOTE_ADDR']))
+		{
+			$_SERVER = $HTTP_ENV_VARS;	// must be Apache
+		}
+	}
+	// end of code taken from PHPMailer class
+
+	return (array_key_exists($k, $_SERVER) ? $_SERVER[$k] : $def);
+}
+
+##
 # = string jsencode(string $str)
 ##
 function jsencode($str)
