@@ -76,5 +76,7 @@ class Initiator
 				$doc->save($fl);
 			}
 		}
+
+		closedir($dh);
 	}
 }
