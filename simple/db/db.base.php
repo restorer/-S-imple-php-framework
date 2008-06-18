@@ -225,8 +225,8 @@ class SDBBase
 
 		$res .= (array_key_exists($str, $arr) ? $arr[$str] : $str);
 
-		if (count($cmd->limit) == 1) $sql .= ' LIMIT '.intval($cmd->limit[0]);
-		elseif (count($cmd->limit) == 2) $sql .= ' LIMIT '.intval($cmd->limit[0]).','.intval($cmd->limit[1]);
+		if (count($cmd->limit) == 1) $res .= ' LIMIT '.intval($cmd->limit[0]);
+		elseif (count($cmd->limit) == 2) $res .= ' LIMIT '.intval($cmd->limit[0]).','.intval($cmd->limit[1]);
 
 		if (DEBUG)
 		{
