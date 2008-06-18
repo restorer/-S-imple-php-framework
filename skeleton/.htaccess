@@ -4,4 +4,5 @@ RewriteEngine On
 RewriteRule	^(.*).tpl$		403.html	[L]
 
 RewriteCond	%{REQUEST_FILENAME}	!-f
-RewriteRule	^([^.]+)$			$1.php		[L]
+RewriteCond	%{REQUEST_FILENAME}	!-d
+RewriteRule	^([^.]+)$		$1.php		[L]

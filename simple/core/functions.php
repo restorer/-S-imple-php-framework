@@ -103,7 +103,7 @@ function error($str)
 function i_on_php_error($code, $message, $filename='', $linenumber=-1, $context=array())
 {
 	if (error_reporting() == 0) return true;
-	if (intval($code) == E_STRICT) return true;
+	if (intval($code) == 2048) return true;		/* E_STRICT */
 
 	error('Error '.$code.' ('.$message.') occured in '.$filename.' at '.$linenumber.'');
 	return true;
