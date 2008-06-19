@@ -50,9 +50,14 @@ class SEmailAttachment
 class SEmail
 {
 	##
-	# [$from] Email from
+	# [$from_email] Email from
 	##
-	var $from = '';
+	var $from_email = '';
+
+	##
+	# [$from_name] Email from name
+	##
+	var $from_name = '';
 
 	##
 	# [$to] Email to
@@ -85,18 +90,26 @@ class SEmail
 	var $charset = 'uft-8';
 
 	##
-	# = void send()
-	# Send email
+	# [$embed_images]
+	##
+	var $embed_images = false;
+
+	##
+	# = string send()
+	# Send email. Returns empty string for success, or error string if error occurred
 	##
 	function send()
 	{
 		$email = clone($this);
-		$email->from = $this->santize_string($email->from);
+
 		$email->to = $this->santize_string($email->to);
+		$email->from_email = $this->santize_string($email->from_email);
+		$email->from_name = $this->santize_string($email->from_name);
 		$email->subject = $this->santize_string($email->subject);
 
-		$this->prepare_images($email);
-		$this->send_raw($email);
+		if ($email->embed_images) $this->prepare_images($email);
+
+		return $this->send_raw($email);
 	}
 
 	function santize_string($str)
@@ -195,10 +208,11 @@ class SEmail
 		{
 			$res .= $str;
 
-			// From SMTP class by Chris Ryan
+			// begin code from SMTP class by Chris Ryan
 			// if the 4th character is a space then we are done reading
 			// so just break the loop
 			if (substr($str, 3, 1) == ' ') break;
+			// end code from SMTP class by Chris Ryan
 		}
 
 		if (DEBUG) dwrite_msg('SMTP response', $res);
@@ -250,7 +264,7 @@ class SEmail
 	{
 		$host = (conf_get('mail.smtp.ssl') ? 'ssl://' : '') . conf_get('mail.smtp.host');
 		$sock = fsockopen($host, conf_get('mail.smtp.port'), $errno, $errstr, conf_get('mail.smtp.timeout'));
-		if (!$sock) error("SMTP: $errstr ($errno)");
+		if (!$sock) return "SMTP: $errstr ($errno)";
 
 		$this->get_smtp_response($sock);	// get dummy response
 		$hostname = _SERVER('SERVER_NAME', 'localhost');
@@ -260,30 +274,65 @@ class SEmail
 		if ($this->get_smtp_response_code($sock) != 250)
 		{
 			$this->smtp_puts($sock, 'HELO ' . $hostname . "\r\n");
-			if ($this->get_smtp_response_code($sock) != 250) error('SMTP: error while sending HELO request');
+
+			if ($this->get_smtp_response_code($sock) != 250)
+			{
+				fclose($sock);
+				return 'SMTP: error while sending HELO request';
+			}
 		}
 
 		if (strlen(conf_get('mail.smtp.user')))
 		{
 	    	$this->smtp_puts($sock, "AUTH LOGIN\r\n");
-			if ($this->get_smtp_response_code($sock) != 334) error('SMTP: error while senging AUTH LOGIN request');
+
+			if ($this->get_smtp_response_code($sock) != 334)
+			{
+				fclose($sock);
+				return 'SMTP: error while senging AUTH LOGIN request';
+			}
 
 		    $this->smtp_puts($sock, base64_encode(conf_get('mail.smtp.user')) . "\r\n");
-			if ($this->get_smtp_response_code($sock) != 334) error('SMTP: error while senging AUTH LOGIN request (username not accepted)');
+
+			if ($this->get_smtp_response_code($sock) != 334)
+			{
+				fclose($sock);
+				return 'SMTP: error while senging AUTH LOGIN request (username not accepted)';
+			}
 
 		    $this->smtp_puts($sock, base64_encode(conf_get('mail.smtp.pass')) . "\r\n");
-			if ($this->get_smtp_response_code($sock) != 235) error('SMTP: error while senging AUTH LOGIN request (invalid password)');
+
+			if ($this->get_smtp_response_code($sock) != 235)
+			{
+				fclose($sock);
+				return 'SMTP: error while senging AUTH LOGIN request (invalid password)';
+			}
     	}
 
-	    $this->smtp_puts($sock, 'MAIL FROM: <' . $from . ">\r\n");
-		if ($this->get_smtp_response_code($sock) != 250) error('SMTP: error while senging MAIL FROM request');
+	    $this->smtp_puts($sock, 'MAIL FROM: ' . $from . "\r\n");
+
+		if ($this->get_smtp_response_code($sock) != 250)
+		{
+			fclose($sock);
+			return 'SMTP: error while senging MAIL FROM request';
+		}
 
 	    $this->smtp_puts($sock,'RCPT TO: <' . $to . ">\r\n");
 	    $code = $this->get_smtp_response_code($sock);
-		if ($code!=250 && $code!=251) error('SMTP: error while senging RCPT TO request');
+
+		if ($code!=250 && $code!=251)
+		{
+			fclose($sock);
+			return 'SMTP: error while senging RCPT TO request';
+		}
 
 	    $this->smtp_puts($sock, "DATA\r\n");
-		if ($this->get_smtp_response_code($sock) != 354) error('SMTP: error while senging DATA request');
+
+		if ($this->get_smtp_response_code($sock) != 354)
+		{
+			fclose($sock);
+			return 'SMTP: error while senging DATA request';
+		}
 
 		$hdr .= 'Subject: ' . $subject . "\r\n";
 		$hdr .= "\r\n";
@@ -292,18 +341,42 @@ class SEmail
 		$this->send_smtp_data($sock, $body, false);
 		$this->smtp_puts($sock, "\r\n.\r\n");
 
-		if ($this->get_smtp_response_code($sock) != 250) error('SMTP: error while senging DATA request (data not accepted)');
+		if ($this->get_smtp_response_code($sock) != 250)
+		{
+			fclose($sock);
+			return 'SMTP: error while senging DATA request (data not accepted)';
+		}
 
 	    $this->smtp_puts($sock, "QUIT\r\n");
-		if ($this->get_smtp_response_code($sock) != 221) error('SMTP: error while senging QUIT request');
+
+		if ($this->get_smtp_response_code($sock) != 221)
+		{
+			fclose($sock);
+			return 'SMTP: error while senging QUIT request';
+		}
 
 		fclose($sock);
+		return '';
+	}
+
+	function make_from(&$email)
+	{
+		return (strlen($email->from_name) ? ($email->from_name . ' <' . $email->from_email . '>') : $email->from_email);
+	}
+
+	function validate_email($email_str)
+	{
+		return preg_match("/^[-+\\.0-9=a-z_]+@([-0-9a-z]+\\.)+([0-9a-z]){2,4}$/i", $email_str);
 	}
 
 	function send_raw(&$email)
 	{
-		$hdr  = 'From: ' . $email->from . "\r\n";
-		$hdr .= 'Reply-To: ' . $email->from . "\r\n";
+		if (!$this->validate_email($email->from_email)) return 'Invalid "From" email';
+		if (!$this->validate_email($email->to)) return 'Invalid "To" email';
+
+		$from = $this->make_from($email);
+
+		$hdr  = 'From: ' . $from . "\r\n";
 		$hdr .= "MIME-Version: 1.0\r\n";
 
 		foreach ($email->headers as $key=>$val) $hdr .= $this->santize_string($key) . ': ' . $this->santize_string($val) . "\r\n";
@@ -357,14 +430,27 @@ class SEmail
 		{
 			if (conf('mail.smtp.enable'))
 			{
-				$this->send_mail_smtp($email->from, $email->to, $email->subject, $hdr, $body);
+				return $this->send_mail_smtp($from, $email->to, $email->subject, $hdr, $body);
 			}
 			else
 			{
-				ini_set('sendmail_from', $email->from);
-				mail($email->to, $email->subject, $body, $hdr);
+				if (strtoupper(substr(PHP_OS,0,3) == 'WIN'))
+				{
+					ini_set('sendmail_from', $email->from_email);
+					$body = str_replace("\n.", "\n..", $body);
+				}
+				else
+				{
+					// probably (not tested)
+					$hdr = str_replace("\r\n", "\n", $hdr);
+				}
+
+				$res = @mail($email->to, $email->subject, $body, $hdr);
+				if (!$res) return 'MAIL: sending failed';
 			}
 		}
+
+		return '';
 	}
 }
 ##
