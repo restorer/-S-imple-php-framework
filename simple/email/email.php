@@ -359,6 +359,58 @@ class SEmail
 		return '';
 	}
 
+	function send_mail_mail($from, $to, $subject, $hdr, $body)
+	{
+		if (strtoupper(substr(PHP_OS, 0, 3) == 'WIN'))
+		{
+			$old_sendmail_form = ini_get('sendmail_from');
+			ini_set('sendmail_from', $from);
+		}
+		else
+		{
+			$hdr = str_replace("\r\n", "\n", $hdr);
+		}
+
+		$body = str_replace("\n.", "\n..", $body);
+		$res = @mail($to, $subject, $body, $hdr);
+
+		if (strtoupper(substr(PHP_OS, 0, 3) == 'WIN'))
+		{
+			ini_set('sendmail_from', $old_sendmail_form);
+		}
+
+		return ($res ? '' : 'MAIL: sending failed');
+	}
+
+	function send_mail_sendmail($from, $to, $subject, $hdr, $body)
+	{
+		$cmd = escapeshellcmd(conf('mail.sendmail.path')) . ' -t -i -f ' . escapeshellarg($from);
+		// $cmd = escapeshellcmd(conf('mail.sendmail.path')) . ' -t -i';
+
+		$h = popen($cmd, 'w');
+		if (!$h) return "SENDMAIL: can't open pipe ($cmd)";
+
+		fputs($h, $hdr);
+		fputs($h, $body);
+
+		$stat = pclose($h);
+
+		if (function_exists('pcntl_wifexited'))
+		{
+			if (!pcntl_wifexited($stat)) return 'SENDMAIL: abnormal sendmail process terminate';
+			$res = pcntl_wexitstatus($stat);
+		}
+		else
+		{
+    		if (version_compare(phpversion(), '4.2.3') == -1) $res = ($stat >> 8) & 0xFF;
+    		else $res = $stat;
+		}
+
+		if ($res) return "SENDMAIL: error occurred (cmd: $cmd) (code: $res)";
+
+		return '';
+	}
+
 	function make_from(&$email)
 	{
 		return (strlen($email->from_name) ? ($email->from_name . ' <' . $email->from_email . '>') : $email->from_email);
@@ -377,6 +429,8 @@ class SEmail
 		$from = $this->make_from($email);
 
 		$hdr  = 'From: ' . $from . "\r\n";
+		$hdr .= 'Return-Path: ' . $email->from_email . "\r\n";
+		$hdr .= 'Errors-To: ' . $email->from_email . "\r\n";
 		$hdr .= "MIME-Version: 1.0\r\n";
 
 		foreach ($email->headers as $key=>$val) $hdr .= $this->santize_string($key) . ': ' . $this->santize_string($val) . "\r\n";
@@ -428,25 +482,19 @@ class SEmail
 
 		if (conf('mail.send'))
 		{
-			if (conf('mail.smtp.enable'))
+			switch (conf('mail.type'))
 			{
-				return $this->send_mail_smtp($from, $email->to, $email->subject, $hdr, $body);
-			}
-			else
-			{
-				if (strtoupper(substr(PHP_OS,0,3) == 'WIN'))
-				{
-					ini_set('sendmail_from', $email->from_email);
-					$body = str_replace("\n.", "\n..", $body);
-				}
-				else
-				{
-					// probably (not tested)
-					$hdr = str_replace("\r\n", "\n", $hdr);
-				}
+				case 'mail':
+					return $this->send_mail_mail($from, $email->to, $email->subject, $hdr, $body);
 
-				$res = @mail($email->to, $email->subject, $body, $hdr);
-				if (!$res) return 'MAIL: sending failed';
+				case 'smtp':
+					return $this->send_mail_smtp($from, $email->to, $email->subject, $hdr, $body);
+
+				case 'sendmail':
+					return $this->send_mail_sendmail($from, $email->to, $email->subject, $hdr, $body);
+
+				default:
+					error('Unknown mailer type (' . conf('mail.type') . ')');
 			}
 		}
 

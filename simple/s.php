@@ -36,7 +36,8 @@ if (!conf_has('regexp.date')) conf_set('regexp.date', '/^(\d\d).(\d\d).(\d\d\d\d
 if (!conf_has('regexp.datetime')) conf_set('regexp.datetime', '/^(\d\d).(\d\d).(\d\d\d\d).(\d\d):(\d\d)(:(\d\d))?$/');
 if (!conf_has('cache.path')) conf_set('cache.path', BASE.'cache/');
 
-if (!conf_has('mail.smtp.enable')) conf_set('mail.smtp.enable', false);
+if (!conf_has('mail.type')) conf_set('mail.type', 'mail');
+if (!conf_has('mail.sendmail.path')) conf_set('mail.sendmail.path', '/var/qmail/bin/sendmail');
 if (!conf_has('mail.smtp.port')) conf_set('mail.smtp.port', 25);
 if (!conf_has('mail.smtp.ssl')) conf_set('mail.smtp.ssl', true);
 if (!conf_has('mail.smtp.timeout')) conf_set('mail.smtp.timeout', 30);
