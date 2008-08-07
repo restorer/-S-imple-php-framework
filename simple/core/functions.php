@@ -105,6 +105,8 @@ function i_on_php_error($code, $message, $filename='', $linenumber=-1, $context=
 	if (error_reporting() == 0) return true;
 	if (intval($code) == 2048) return true;		/* E_STRICT */
 
+	// TODO: check for E_NOTICE
+
 	error('Error '.$code.' ('.$message.') occured in '.$filename.' at '.$linenumber.'');
 	return true;
 }
