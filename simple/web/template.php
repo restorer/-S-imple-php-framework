@@ -8,6 +8,13 @@
  * World fastest and simpliest php templates :)
  */
 
+/*
+ * TODO: Check what faster:
+ *       a) aaa <~php echo $__t->call('xxx') ~> bbb
+ *       b) $__s.='aaa'; $__s.=$__t->call('xxx'); $__s.='bbb';
+ *       If 'a' if faster, revert template to old model (ob_start / ob_get_contents / ob_end_flush)
+ */
+
 define('LBRA', '<'.'?');
 define('RBRA', '?'.'>');
 
