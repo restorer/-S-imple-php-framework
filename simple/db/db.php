@@ -24,6 +24,8 @@ define('DB_IntsList', 9);
 define('DB_TableName', 10);
 define('DB_FieldName', 11);
 
+define('DB_Text', DB_Blob);
+
 ##
 # .begin
 # = class SDB

@@ -225,7 +225,9 @@ function dflush()
 	if (!DEBUG) return;
 	if (!array_key_exists('_debug_log_', $GLOBALS)) return;
 
-	echo "\n",'<div style="margin:8px 2px 2px 2px;padding:2px 2px 2px 2px;border:1px solid #875;background-color:#FEA;"><code style="color:#000;font-family:courier new;font-size:8pt;">',"\n";
+	echo "\n";
+	echo '<a style="position:absolute;top:0;left:0;font-family:Tahoma,Arial;font-size:8pt;color:#FFF;background-color:#000;font-weight:bold;text-decoration:none;" href="javascript:document.getElementById(\'__s_debug__\').style.display=(document.getElementById(\'__s_debug__\').style.display==\'\'?\'none\':\'\');void(0);">#</a>';
+	echo '<div id="__s_debug__" style="display:none;position:absolute;top:20px;left:10px;z-index:10000;padding:2px 2px 2px 2px;border:1px solid #875;background-color:#FEA;"><code style="color:#000;font-family:monospace;font-size:8pt;">',"\n";
 
 	foreach ($GLOBALS['_debug_log_'] as $arr)
 	{
@@ -240,16 +242,16 @@ function dflush()
 
 		switch ($type)
 		{
-			case S_ERROR: $str = '<font color="#FF0000">'.$str.'</font>'; break;
-			case S_SUCCESS: $str = '<font color="#008000">'.$str.'</font>'; break;
-			case S_ACCENT: $str = '<font color="#F08000">'.$str.'</font>'; break;
-			case S_NOTICE: $str = '<font color="#800000">'.$str.'</font>'; break;
+			case S_ERROR: $str = '<span style="color:#F00">'.$str.'</span>'; break;
+			case S_SUCCESS: $str = '<span style="color:#080">'.$str.'</span>'; break;
+			case S_ACCENT: $str = '<span style="color:#F80">'.$str.'</span>'; break;
+			case S_NOTICE: $str = '<span style="color:#800">'.$str.'</span>'; break;
 		}
 
-		echo '<font color="#008000">',$time,':</font> ',$str,"<br>\n";
+		echo '<font color="#080">',$time,':</span> ',$str,"<br />\n";
 	}
 
-	echo '</code></div><br>';
+	echo '</code></div></div>';
 }
 
 ##

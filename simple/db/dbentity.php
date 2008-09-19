@@ -14,6 +14,12 @@ require_once(S_BASE.'db/db.php');
 define('SDBENTITY_RELATION_BELONGS_TO', 1);
 define('SDBENTITY_RELATION_HAS_MANY', 2);
 
+define('SDBENTITY_FILTER_AFTER_LOAD', 1);
+define('SDBENTITY_FILTER_BEFORE_SAVE', 2);
+define('SDBENTITY_FILTER_AFTER_SAVE', 3);
+define('SDBENTITY_FILTER_BEFORE_REMOVE', 4);
+define('SDBENTITY_FILTER_AFTER_REMOVE', 5);
+
 ##
 # .begin
 # = class SDBEntity
@@ -23,7 +29,7 @@ class SDBEntity extends SEntity
 	var $_db_key = 'id';
 	var $_db_table = '';
 	var $_db_fields = array();
-	var $_db_after_filter = '';
+	var $_filters = array();
 	var $_relations = array();
 	var $_rel_objects = array();
 
@@ -33,12 +39,18 @@ class SDBEntity extends SEntity
 	}
 
 	##
-	# = void __construct(bool $auto_init=false)
+	# = void __construct(bool $auto_init=true)
 	# [$auto_init] Auto initialize table name and fields
 	# Don't forget to call parent constructor in your class
 	##
-	function __construct($auto_init=false)
+	function __construct($auto_init=true)
 	{
+		$this->_filters[SDBENTITY_FILTER_AFTER_LOAD] = array();
+		$this->_filters[SDBENTITY_FILTER_BEFORE_SAVE] = array();
+		$this->_filters[SDBENTITY_FILTER_AFTER_SAVE] = array();
+		$this->_filters[SDBENTITY_FILTER_BEFORE_REMOVE] = array();
+		$this->_filters[SDBENTITY_FILTER_AFTER_REMOVE] = array();
+
 		if ($auto_init) $this->i_init();
 	}
 
@@ -143,12 +155,48 @@ class SDBEntity extends SEntity
 	}
 
 	##
-	# = void after_filter(string $method_name)
+	# = void after_load_filter(string $method_name)
 	# Adds "after load" filter
 	##
-	function after_filter($method_name)
+	function after_load_filter($method_name)
 	{
-		$this->_db_after_filter = $method_name;
+		$this->_filters[SDBENTITY_FILTER_AFTER_LOAD][] = $method_name;
+	}
+
+	##
+	# = void before_save_filter(string $method_name)
+	# Adds "before save" filter
+	##
+	function before_save_filter($method_name)
+	{
+		$this->_filters[SDBENTITY_FILTER_BEFORE_SAVE][] = $method_name;
+	}
+
+	##
+	# = void after_save_filter(string $method_name)
+	# Adds "after save" filter
+	##
+	function after_save_filter($method_name)
+	{
+		$this->_filters[SDBENTITY_FILTER_AFTER_SAVE][] = $method_name;
+	}
+
+	##
+	# = void before_remove_filter(string $method_name)
+	# Adds "before remove" filter
+	##
+	function before_remove_filter($method_name)
+	{
+		$this->_filters[SDBENTITY_FILTER_BEFORE_REMOVE][] = $method_name;
+	}
+
+	##
+	# = void after_remove_filter(string $method_name)
+	# Adds "after remove" filter
+	##
+	function after_remove_filter($method_name)
+	{
+		$this->_filters[SDBENTITY_FILTER_AFTER_REMOVE][] = $method_name;
 	}
 
 	function i_fuzzy_find_table($classname, $sclsname, $tables)
@@ -217,10 +265,10 @@ class SDBEntity extends SEntity
 		$this->i_init_fields();
 	}
 
-	function i_process_after_filter()
+	function i_process_filters($type)
 	{
-		if ($this->_db_after_filter != '') {
-			call_user_func(array(&$this, $this->_db_after_filter));
+		foreach ($this->_filters[$type] as $method_name) {
+			call_user_func(array(&$this, $method_name));
 		}
 	}
 
@@ -256,7 +304,7 @@ class SDBEntity extends SEntity
 			$this->$prop = $row[$prop];
 		}
 
-		$this->i_process_after_filter();
+		$this->i_process_filters(SDBENTITY_FILTER_AFTER_LOAD);
 		return true;
 	}
 
@@ -299,6 +347,7 @@ class SDBEntity extends SEntity
 	function save()
 	{
 		$this->i_init();
+		$this->i_process_filters(SDBENTITY_FILTER_BEFORE_SAVE);
 
 		if ($this->is_new())
 		{
@@ -350,6 +399,8 @@ class SDBEntity extends SEntity
 
 			$cmd->execute();
 		}
+
+		$this->i_process_filters(SDBENTITY_FILTER_AFTER_SAVE);
 	}
 
 	##
@@ -359,6 +410,7 @@ class SDBEntity extends SEntity
 	function remove()
 	{
 		$this->i_init();
+		$this->i_process_filters(SDBENTITY_FILTER_BEFORE_REMOVE);
 
 		$cmd =& new SDBCommand("DELETE FROM @_db_table WHERE @_f_id=@id");
 		$cmd->add('@_db_table', DB_TableName, $this->_db_table);
@@ -366,6 +418,7 @@ class SDBEntity extends SEntity
 		$cmd->add('@id', DB_Int, $this->get_id());
 
 		$cmd->execute();
+		$this->i_process_filters(SDBENTITY_FILTER_AFTER_REMOVE);
 	}
 
 	function i_get_where_string($conditions)
@@ -417,6 +470,8 @@ class SDBEntity extends SEntity
 		if (is_string($order)) return ' ORDER BY @_fo_'.$order;
 		if (!is_array($order)) error('SDBEntity.i_get_order_string : unknown order');
 
+		if (count($order)>1 && is_bool($order[1])) $order = array($order);
+
 		$res = ' ORDER BY ';
 
 		foreach ($order as $val)
@@ -441,6 +496,8 @@ class SDBEntity extends SEntity
 		}
 		else	/* is_array */
 		{
+			if (count($order)>1 && is_bool($order[1])) $order = array($order);
+
 			foreach ($order as $val)
 			{
 				if (is_string($val)) $cmd->add('@_fo_'.$val, DB_FieldName, $this->_db_fields[$val]['f']);
@@ -462,12 +519,13 @@ class SDBEntity extends SEntity
 		foreach ($arr as $row)
 		{
 			eval('$obj =& new '.$classname.'();');
+			$obj->i_init();
 
 			foreach ($obj->_db_fields as $prop=>$ts) {
 				$obj->$prop = $row[$ts['f']];
 			}
 
-			$obj->i_process_after_filter();
+			$obj->i_process_filters(SDBENTITY_FILTER_AFTER_LOAD);
 			$result[] = $obj;
 		}
 
@@ -475,13 +533,14 @@ class SDBEntity extends SEntity
 	}
 
 	##
-	# = static array find_all(string $classname, mixed $conditions=null, mixed $order=null)
+	# = static array find_all(string $classname, mixed $conditions=null, mixed $order=null, mixed $limit=null)
 	# Find all objects using search conditions
 	# | $res = SDBEntity::find_all('SomeItem', array('nickname', '=', 'fuck'), array('registration_date', false))
 	##
-	function find_all($classname, $conditions=null, $order=null)
+	function find_all($classname, $conditions=null, $order=null, $limit=null)
 	{
 		eval('$tmp =& new '.$classname.'();');
+		$tmp->i_init();
 
 		if ($conditions === null)
 		{
@@ -497,12 +556,65 @@ class SDBEntity extends SEntity
 			$tmp->i_prepare_order($cmd, $order);
 		}
 
+		if ($limit !== null) $cmd->limit = $limit;
+
 		return SDBEntity::find_all_by_cmd($classname, $cmd);
 	}
 
 	##
+	# = static int get_count(string $classname, mixed $conditions=null)
+	# | $res = SDBEntity::get_count('SomeItem', array('nickname', '=', 'fuck'))
+	##
+	function get_count($classname, $conditions=null)
+	{
+		eval('$tmp =& new '.$classname.'();');
+		$tmp->i_init();
+	
+		if ($conditions === null)
+		{
+			$cmd =& new SDBCommand("SELECT COUNT(*) FROM @_db_table");
+			$cmd->add('@_db_table', DB_TableName, $tmp->_db_table);
+		}
+		else
+		{
+			$cmd =& new SDBCommand("SELECT COUNT(*) FROM @_db_table WHERE " . $tmp->i_get_where_string($conditions));
+			$cmd->add('@_db_table', DB_TableName, $tmp->_db_table);
+			$tmp->i_prepare_command($cmd, $conditions);
+		}
+
+		return $cmd->get_one();
+	}
+
+	##
+	# = static void remove_all(string $classname, midex $conditions=null)
+	# Remove objects by conditions (or all objects) without retrieving it. Remove filters was **not** called.
+	# **TODO:** call remomve filters with id as parameter.
+	# | SDBEntity::remove_all('SomeItem', array('parent_id', '=', 42))
+	##
+	function remove_all($classname, $conditions=null)
+	{
+		eval('$tmp =& new '.$classname.'();');
+		$tmp->i_init();
+
+		if ($conditions === null)
+		{
+			$cmd =& new SDBCommand("DELETE FROM @_db_table");
+			$cmd->add('@_db_table', DB_TableName, $tmp->_db_table);
+		}
+		else
+		{
+			$cmd =& new SDBCommand("DELETE FROM @_db_table WHERE " . $tmp->i_get_where_string($conditions));
+			$cmd->add('@_db_table', DB_TableName, $tmp->_db_table);
+			$tmp->i_prepare_command($cmd, $conditions);
+		}
+
+		$cmd->execute();
+	}
+
+	##
 	# = static void remove_by_id(string $classname, int $id)
-	# Remove object by id (without retrieving it)
+	# Remove object by id (without retrieving it). Remove filters was **not** called.
+	# **TODO:** call remomve filters with id as parameter.
 	# | SDBEntity::remove_by_id('SomeItem', 42)
 	##
 	function remove_by_id($classname, $id)

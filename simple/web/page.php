@@ -422,7 +422,7 @@ class SPage
 		if (!array_key_exists(PAGE_INIT, $this->_events)) return;
 
 		foreach ($this->_events[PAGE_INIT] as $method) {
-			call_user_func(array(&$this, $method));
+			call_user_func(is_array($method) ? $method : array(&$this, $method));
 			if ($this->_flow != PAGE_FLOW_NORMAL) return;
 		}
 	}
@@ -462,7 +462,7 @@ class SPage
 		if (!array_key_exists(PAGE_PRE_RENDER, $this->_events)) return;
 
 		foreach ($this->_events[PAGE_PRE_RENDER] as $method) {
-			call_user_func(array(&$this, $method));
+			call_user_func(is_array($method) ? $method : array(&$this, $method));
 			if ($this->_flow != PAGE_FLOW_NORMAL) return;
 		}
 	}
@@ -559,6 +559,14 @@ class SPage
 			case PAGE_FLOW_REDIRECT: $this->redirect_handler(); break;
 			case PAGE_FLOW_RENDER: $this->render(); break;
 		}
+	}
+
+	##
+	# = void break_flow()
+	##
+	function break_flow()
+	{
+		$this->_flow = PAGE_FLOW_BREAK;
 	}
 
 	##
