@@ -26,6 +26,10 @@ function expand_tilde($path) {
 	return ($path{0}=='~' ? BASE.substr($path, 1) : $path);
 }
 
+if (!conf_has('debug')) conf_set('debug', true);
+if (!conf_has('log_errors')) conf_set('log_errors', false);
+if (!conf_has('log.path')) conf_set('log.path', '~/cache/debug.log');
+
 if (!conf_has('http.port')) conf_set('http.port', 80);
 if (!conf_has('ssl.port')) conf_set('ssl.port', 443);
 if (!conf_has('ssl.root')) conf_set('ssl.root', conf('http.root'));
@@ -47,6 +51,7 @@ conf_set('log.path', expand_tilde(conf('log.path')));
 define('ROOT', conf('http.root'));
 define('SSL_ROOT', conf('ssl.root'));
 define('DEBUG', conf('debug'));
+define('LOG_ERRORS', conf('log_errors'));
 
 $s_runconf->set('time.sql.query', 0);
 $s_runconf->set('time.sql.parse', 0);

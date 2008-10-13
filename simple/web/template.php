@@ -41,14 +41,17 @@ class STemplate
 		$res = '';
 		$spl = explode("\n", $str);
 
-		foreach ($spl as $val) {
-			if ($val != '') {
+		foreach ($spl as $val)
+		{
+			if (strlen($val)) {
 				$res .= '\'' . str_replace('\'', '\\\'', str_replace('\\', '\\\\', $val)) . '\'."\\n".';
+			} else {
+				$res .= '"\\n".';
 			}
 		}
 
-		$res = substr($res, 0, -1);
 		if ($str{strlen($str)-1} != "\n") $res = substr($res, 0, -5);
+		if ($res{strlen($res)-1} == '.') $res = substr($res, 0, -1);
 
 		return $res;
 	}

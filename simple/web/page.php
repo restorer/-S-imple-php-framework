@@ -76,6 +76,11 @@ class SPage
 	##
 	var $content_type = 'text/html';
 
+	##
+	# [$squeeze]
+	##
+	var $squeeze = true;
+
 	var $form_data = array();	// used while render form and form controls
 
 	var $_start_time = 0;
@@ -422,7 +427,7 @@ class SPage
 		if (!array_key_exists(PAGE_INIT, $this->_events)) return;
 
 		foreach ($this->_events[PAGE_INIT] as $method) {
-			call_user_func(is_array($method) ? $method : array(&$this, $method));
+			call_user_func(array(&$this, $method));
 			if ($this->_flow != PAGE_FLOW_NORMAL) return;
 		}
 	}
@@ -462,7 +467,7 @@ class SPage
 		if (!array_key_exists(PAGE_PRE_RENDER, $this->_events)) return;
 
 		foreach ($this->_events[PAGE_PRE_RENDER] as $method) {
-			call_user_func(is_array($method) ? $method : array(&$this, $method));
+			call_user_func(array(&$this, $method));
 			if ($this->_flow != PAGE_FLOW_NORMAL) return;
 		}
 	}
@@ -487,6 +492,21 @@ class SPage
 		$nw = get_microtime();
 
 		$this->output_headers();
+
+		if ($this->squeeze)
+		{
+			$spl = explode("\n", $res);
+			$arr = array();
+
+			for ($i = 0; $i < count($spl); $i++)
+			{
+				$str = trim($spl[$i]);
+				if (strlen($str)) $arr[] = $str;
+			}
+
+			$res = implode("\n", $arr);
+		}
+
 		echo $res;
 
 		if  ($this->content_type=='text/html' && DEBUG)

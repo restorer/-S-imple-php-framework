@@ -87,7 +87,7 @@ class SEmail
 	##
 	# [$charset] Email charset. **utf-8** is used by default.
 	##
-	var $charset = 'uft-8';
+	var $charset = 'UTF-8';
 
 	##
 	# [$embed_images]
@@ -260,7 +260,7 @@ class SEmail
 		}
 	}
 
-	function send_mail_smtp($from, $to, $subject, $hdr, $body)
+	function send_mail_smtp($from_email, $from, $to, $subject, $hdr, $body)
 	{
 		$host = (conf_get('mail.smtp.ssl') ? 'ssl://' : '') . conf_get('mail.smtp.host');
 		$sock = fsockopen($host, conf_get('mail.smtp.port'), $errno, $errstr, conf_get('mail.smtp.timeout'));
@@ -309,7 +309,7 @@ class SEmail
 			}
     	}
 
-	    $this->smtp_puts($sock, 'MAIL FROM: ' . $from . "\r\n");
+	    $this->smtp_puts($sock, 'MAIL FROM: <' . $from_email . ">\r\n");
 
 		if ($this->get_smtp_response_code($sock) != 250)
 		{
@@ -488,7 +488,7 @@ class SEmail
 					return $this->send_mail_mail($from, $email->to, $email->subject, $hdr, $body);
 
 				case 'smtp':
-					return $this->send_mail_smtp($from, $email->to, $email->subject, $hdr, $body);
+					return $this->send_mail_smtp($email->from_email, $from, $email->to, $email->subject, $hdr, $body);
 
 				case 'sendmail':
 					return $this->send_mail_sendmail($from, $email->to, $email->subject, $hdr, $body);

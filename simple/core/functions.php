@@ -15,46 +15,40 @@ define('S_ACCENT', 3);
 define('S_NOTICE', 4);
 
 /*
- * PHP Compat
- */
-if (version_compare(phpversion(), '5.0') === -1) {
-	/* Needs to be wrapped in eval as clone is a keyword in PHP5 */
-	eval('
-		function php_compat_clone($object)
-		{
-			// Sanity check
-			if (!is_object($object)) {
-				user_error(\'clone() __clone method called on non-object\', E_USER_WARNING);
-				return;
-			}
-
-			// Use serialize/unserialize trick to deep copy the object
-			$object = unserialize(serialize($object));
-
-			// If there is a __clone method call it on the "new" class
-			if (method_exists($object, \'__clone\')) {
-				$object->__clone();
-			}
-
-			return $object;
-		}
-
-		function clone($object) {
-			return php_compat_clone($object);
-		}
-	');
-}
-
-/*
  * Based on code from PHP Compat
  */
-function i_get_backtrace()
+function i_get_backtrace($funcname='')
 {
 	$backtrace = debug_backtrace();
-	array_shift($backtrace);
-	if (isset($backtrace[0]) && $backtrace[0]['function'] === 'i_get_backtrace') array_shift($backtrace);
 
-	$res = '<table cellpadding="4" cellspacing="0" style="font-family:verdana;font-size:8pt;border-left:1px solid #000;border-top:1px solid #000;">';
+	$skip_it = array('i_get_backtrace' => true);
+	if (strlen($funcname)) $skip_it[$funcname] = true;
+
+	for ($i = 0; $i<3 && count($backtrace); $i++) {
+		if (array_key_exists($backtrace[0]['function'], $skip_it)) {
+			array_shift($backtrace);
+		}
+	}
+
+	$res = array();
+
+	foreach ($backtrace as $ind=>$call)
+	{
+		$location = (array_key_exists('file', $call) ? $call['file'] : '?');
+		$line = (array_key_exists('line', $call) ? $call['line'] : '?');
+		$function = (array_key_exists('class', $call) ? ($call['class'] . '.' . $call['function']) : $call['function']);
+
+		$res[] = array('ind' => $ind, 'loc' => $location, 'line' => $line, 'func' => $function);
+	}
+
+	return $res;
+}
+
+function i_get_backtrace_html()
+{
+	$calls = i_get_backtrace('i_get_backtrace_html');
+
+	$res = '<table cellpadding="4" cellspacing="0" style="font-family:Tahoma,Arial;font-size:8pt;border-left:1px solid #000;border-top:1px solid #000;">';
 	$res .= '<tr>';
 	$res .= '<td style="background-color:#000;color:#FFF;border-right:1px solid #888;">#</td>';
 	$res .= '<td style="background-color:#000;color:#FFF;border-right:1px solid #888;">Location</td>';
@@ -62,24 +56,60 @@ function i_get_backtrace()
 	$res .= '<td style="background-color:#000;color:#FFF;">Function</td>';
 	$res .= '</tr>';
 
-	$calls = array();
-
-	foreach ($backtrace as $i=>$call)
+	foreach ($calls as $call)
 	{
-		$location = (array_key_exists('file', $call) ? $call['file'] : '?');
-		$line = (array_key_exists('line', $call) ? $call['line'] : '?');
-		$function = (isset($call['class'])) ? $call['class'] . '.' . $call['function'] : $call['function'];
-
-		$str = '<tr>';
-		$str .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$i.'</td>';
-		$str .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$location.'</td>';
-		$str .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$line.'</td>';
-		$str .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$function.'</td>';
-		$str .= '</tr>';
-		$calls[] = $str;
+		$res .= '<tr>';
+		$res .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$call['ind'].'</td>';
+		$res .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$call['loc'].'</td>';
+		$res .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$call['line'].'</td>';
+		$res .= '<td style="border-right:1px solid #000;border-bottom:1px solid #000;">'.$call['func'].'</td>';
+		$res .= '</tr>';
 	}
 
-	$res .= implode('',array_reverse($calls)) . '</table>';
+	return $res . '</table>';
+}
+
+function i_get_backtrace_text()
+{
+	$calls = i_get_backtrace('i_get_backtrace_text');
+
+	$hdr = array('ind' => '#', 'loc' => 'Location', 'line' => 'Line', 'func' => 'Function');
+	$sizes = array();
+
+	foreach ($hds as $key=>$str) {
+		$sizes[$key] = strlen($str);
+	}
+
+	foreach ($calls as $call) {
+		foreach ($call as $key=>$str) {
+			if (strlen($str) > $sizes[$key]) {
+				$sizes[$key] = strlen($str);
+			}
+		}
+	}
+
+	$arr = array();
+	$total = 0;
+
+	foreach ($hdr as $key=>$str)
+	{
+		$arr[] = sprintf('%-' . $sizes[$key] . 's', $str);
+		$total += $sizes[$key];
+	}
+
+	$res = implode(' | ', $arr) . "\n", sprintf("%'-'-" . ($total + (count($hdr) * 3 - 3)) . 's', '') . "\n";
+
+	foreach ($calls as $call)
+	{
+		$arr = array();
+
+		foreach ($call as $key=>$str) {
+			$arr[] = sprintf('%-' . $sizes[$key] . 's', $str);
+		}
+
+		$res .= implode(' | ', $arr) . "\n";
+	}
+
 	return $res;
 }
 
@@ -89,21 +119,33 @@ function i_get_backtrace()
 ##
 function error($str)
 {
+	if (LOG_ERRORS)
+	{
+		_log('[Error happened]');
+		_log($str . "\n");
+		_log(i_get_backtrace_text());
+		_log('');
+		_log(dflush_str());
+		_log('');
+	}
+
 	if (DEBUG)
 	{
-		$bt = i_get_backtrace();
 		echo "<pre>$str</pre>";
-		echo $bt;
+		echo i_get_backtrace_html();
 		dflush();
 		die;
 	}
-	else die("<pre>Server error: $str</pre>");
+	else
+	{
+		die("Error happened");
+	}
 }
 
 function i_on_php_error($code, $message, $filename='', $linenumber=-1, $context=array())
 {
 	if (error_reporting() == 0) return true;
-	if (intval($code) == 2048) return true;		/* E_STRICT */
+	if (intval($code) == 2048) return true;		// E_STRICT
 
 	// TODO: check for E_NOTICE
 
@@ -178,7 +220,8 @@ function make_directory($dir, $mode=0777)
 ##
 # = float get_microtime()
 ##
-function get_microtime() {
+function get_microtime()
+{
 	list($usec, $sec) = explode(' ', microtime());
 	return $usec + $sec;
 }
@@ -195,26 +238,32 @@ function microtime_to_str($tm)
 ##
 # = string mtime_str()
 ##
-function mtime_str() {
+function mtime_str()
+{
 	return microtime_to_str(get_microtime());
 }
 
 ##
 # = void dwrite(string $str, int $type=S_NORMAL)
 ##
-function dwrite($str, $type=S_NORMAL) {
+function dwrite($str, $type=S_NORMAL, $msg='')
+{
 	if (!DEBUG) return;
-	if (!array_key_exists('_debug_log_', $GLOBALS)) $GLOBALS['_debug_log_'] = array();
-	$GLOBALS["_debug_log_"][] = array('time'=>mtime_str(), 'type'=>$type, 'str'=>$str, 'msg'=>'');
+
+	global $_debug_log_;
+
+	if (!isset($_debug_log_)) $_debug_log_ = array();
+	$_debug_log_[] = array('time'=>mtime_str(), 'type'=>$type, 'str'=>$str, 'msg'=>$msg);
 }
 
 ##
 # = void dwrite_msg(string $str, string $msg, int $type=S_NORMAL)
+# Shortcut for dwrite($str, S_NORMAL, $msg)
 ##
-function dwrite_msg($str, $msg, $type=S_NORMAL) {
+function dwrite_msg($str, $msg, $type=S_NORMAL)
+{
 	if (!DEBUG) return;
-	if (!array_key_exists('_debug_log_', $GLOBALS)) $GLOBALS['_debug_log_'] = array();
-	$GLOBALS["_debug_log_"][] = array('time'=>mtime_str(), 'type'=>$type, 'str'=>$str, 'msg'=>$msg);
+	dwrite($str, $type, $msg);
 }
 
 ##
@@ -316,69 +365,78 @@ function cast_bool($val)
 	if ($val === false) return false;
 
 	$val = strtolower($val);
-	return ($val=="true" || $val=="1" || $val=="on" || $val=="yes");
+	return ($val=='true' || $val=='1' || $val=='on' || $val=='yes');
 }
 
 ##
 # = string now()
 ##
-function now() {
+function now()
+{
 	return date('Y-m-d H:i:s', time());
 }
 
 ##
 # = bool inGET($k)
 ##
-function inGET($k) {
+function inGET($k)
+{
 	return array_key_exists($k, $_GET);
 }
 
 ##
 # = bool inPOST($k)
 ##
-function inPOST($k) {
+function inPOST($k)
+{
 	return array_key_exists($k, $_POST);
 }
 
 ##
 # = bool inSESSION($k)
 ##
-function inSESSION($k) {
+function inSESSION($k)
+{
 	return array_key_exists($k, $_SESSION);
 }
 
 ##
 # = bool inCOOKIE($k)
 ##
-function inCOOKIE($k) {
+function inCOOKIE($k)
+{
 	return array_key_exists($k, $_COOKIE);
 }
 
 ##
 # = mixed _GET(string $k, mixed $def='')
 ##
-function _GET($k, $def='') {
+function _GET($k, $def='')
+{
 	return (InGET($k) ? $_GET[$k] : $def);
 }
 
 ##
 # = mixed _POST(string $k, mixed $def='')
 ##
-function _POST($k, $def='') {
+function _POST($k, $def='')
+{
 	return (InPOST($k) ? $_POST[$k] : $def);
 }
 
 ##
 # = mixed _SESSION(string $k, mixed $def='')
 ##
-function _SESSION($k, $def='') {
+function _SESSION($k, $def='')
+{
 	return (InSESSION($k) ? $_SESSION[$k] : $def);
 }
 
 ##
 # = mixed _COOKIE(string $k, mixed $def='')
 ##
-function _COOKIE($k, $def='') {
+function _COOKIE($k, $def='')
+{
 	return (InCOOKIE($k) ? $_COOKIE[$k] : $def);
 }
 
@@ -419,14 +477,28 @@ function jsencode($str)
 }
 
 ##
-# = void _log(string $msg, string $file='')
+# = void _log(string $msg, string $path='')
 ##
-function _log($msg, $file='')
+function _log($msg, $path='', $supress_errors=false)
 {
-	if ($file == '') $file = conf('log.path');
- 	if (!($f = fopen($file, 'at'))) Error('Can\'t open log file');
-	if (!fwrite($f, $msg."\n")) Error('Can\'t write to log file');
-	fclose($f);
+	if (!strlen($path)) $path = conf('log.path');
+
+	if ($supress_errors)
+	{
+		$fp = @fopen($path, 'at');
+
+		if ($fp)
+		{
+			@fwrite($fp, $msg . "\n");
+			@fclose($fp);
+		}
+	}
+	else
+	{
+	 	if (!($fp = @fopen($path, 'at'))) error("Can't open log file");
+		if (!@fwrite($fp, $msg . "\n")) error("Can't write to log file");
+		fclose($fp);
+	}
 }
 
 ##
@@ -434,7 +506,7 @@ function _log($msg, $file='')
 ##
 function __log($msg, $nl=true)
 {
-	$fp = fopen(BASE.'_debuglog_.log', 'at');
+	$fp = fopen(BASE . '_debuglog_.log', 'at');
 	fwrite($fp, $msg);
 	if ($nl) fwrite($fp, "\n");
 	fclose($fp);

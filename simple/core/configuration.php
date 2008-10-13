@@ -14,12 +14,12 @@
 ##
 class SConfig
 {
-	var $conf = array();
+	protected var $conf = array();
 
 	##
 	# = void clear()
 	##
-	function clear()
+	public function clear()
 	{
 		$this->conf = array();
 	}
@@ -27,7 +27,7 @@ class SConfig
 	##
 	# = void set(string $path, mixed $value)
 	##
-	function set($path, $value)
+	public function set($path, $value)
 	{
 		$arr = explode('.', $path);
 		$node =& $this->conf;
@@ -48,7 +48,7 @@ class SConfig
 	# = mixed get(string $path, mixed $def)
 	# [$def] default value which is used when config doesn't have values it **$path**
 	##
-	function get($path, $def=null)
+	public function get($path, $def=null)
 	{
 		$arr = explode('.', $path);
 		$node =& $this->conf;
@@ -66,7 +66,7 @@ class SConfig
 	##
 	# = bool has(string $path)
 	##
-	function has($path)
+	public function has($path)
 	{
 		$res = $this->get($path);
 		return ($res !== null);
@@ -76,7 +76,7 @@ class SConfig
 	# = SConfig sub(string $path)
 	# Creates sub-config
 	##
-	function sub($path)
+	public function sub($path)
 	{
 		$sub = $this->get($path);
 		if ($sub === null) return null;
