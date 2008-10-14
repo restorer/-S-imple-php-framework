@@ -1,3 +1,3 @@
 <?php
 
-require_once(S_BASE.'db/dbentity.php');
+require_once(S_BASE . 'db/record.php');

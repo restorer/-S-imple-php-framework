@@ -10,60 +10,71 @@
 
 ##
 # .begin
-# = class SDBBase
+# = abstract class SDBBase
 # Base class for db drivers
 ##
-class SDBBase
+abstract class SDBBase
 {
+	const Select = 1;
+	const Insert = 2;
+	const Execute = 3;
+
 	##
 	# [$database] Current database
 	##
-	var $database = '';
+	protected $database = '';
 
 	##
 	# [$prefix] Table prefix
 	##
-	var $prefix = '';
+	protected $prefix = '';
 
 	##
 	# [$tables] Table names cache
 	##
-	var $tables = null;
+	protected $tables = null;
 
 	##
 	# [$tables_columns] Table column names cache
 	##
-	var $tables_columns = array();
+	protected $tables_columns = array();
 
 	##
-	# = abstract void set_database(string $name)
+	# = public void call_init_hook()
 	##
-	function set_database($name)
+	public function call_init_hook()
 	{
-		error('SDBBase.set_database must be overrided');
+		if (conf_has('db.init_hook')) {
+			call_user_func(conf('db.init_hook'), $this);
+		}
 	}
 
 	##
-	# = void set_prefix(string $prefix)
+	# = public abstract void set_database(string $name)
 	##
-	function set_prefix($prefix)
+	public abstract function set_database($name);
+
+	##
+	# = public void set_prefix(string $prefix)
+	##
+	public function set_prefix($prefix)
 	{
 		$this->prefix = $prefix;
 	}
 
 	##
-	# = string i_parse(SDBCommand &$cmd)
+	# = string parse(SDBCommand &$cmd)
 	# [$cmd] Command to parse
 	# **TODO:** More flexible limiting (i.e. MSSQL has no LIMIT command, but has SELECT TOP <num>)
 	##
-	function i_parse(&$cmd)
+	function parse($cmd)
 	{
 		global $s_runconf;
 		$arr = array();
 
 		if (DEBUG) { $st = get_microtime(); }
 
-		foreach ($cmd->params as $k=>$parm)
+		foreach ($cmd->_params as $k=>$parm)
 		{
 			$val = $parm['v'];
 
@@ -74,7 +85,7 @@ class SDBBase
 
 			switch ($parm['t'])
 			{
-				case DB_String:
+				case SDB::String:
 					$val = strval($val);
 
 					if (strlen($val) > $parm['s']) {
@@ -85,7 +96,7 @@ class SDBBase
 					$val = $this->quote($val);
 					break;
 
-				case DB_LikeString:
+				case SDB::LikeString:
 					$val = strval($val);
 
 					if (strlen($val) > $parm['s']) {
@@ -96,46 +107,46 @@ class SDBBase
 					$val = $this->quote_like($val);
 					break;
 
-				case DB_Int:
-					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not DB_Int", S_ERROR);}
+				case SDB::Int:
+					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not SDB::Int", S_ERROR);}
 					$val = intval($val);
 					$val = $this->quote($val);
 					break;
 
-				case DB_Float:
-					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not DB_Float", S_ERROR);}
+				case SDB::Float:
+					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not SDB::Float", S_ERROR);}
 					$val = floatval($val);
 					$val = $this->quote($val);
 					break;
 
-				case DB_Date:
+				case SDB::Date:
 					$val = strval($val);
 
 					if (!preg_match("/^(\d{4})-(\d\d)-(\d{2})$/", $val)) {
-						if (DEBUG) dwrite("Parameter '$k' is not DB_Date", S_ERROR);
+						if (DEBUG) dwrite("Parameter '$k' is not SDB::Date", S_ERROR);
 						$val = '0000-01-01';
 					}
 
 					$val = $this->quote($val);
 					break;
 
-				case DB_DateTime:
+				case SDB::DateTime:
 					$val = strval($val);
 
 					if (!preg_match("/^(\d{4})-(\d\d)-(\d{2})( (\d\d):(\d\d):(\d\d))?$/", $val)) {
-						if (DEBUG) dwrite("Parameter '$k' is not DB_DateTime", S_ERROR);
+						if (DEBUG) dwrite("Parameter '$k' is not SDB::DateTime", S_ERROR);
 						$val = '0000-01-01 00:00:00';
 					}
 
 					$val = $this->quote($val);
 					break;
 
-				case DB_Blob:
+				case SDB::Blob:
 					$val = strval($val);
 					$val = $this->quote($val);
 					break;
 
-				case DB_StringsList:
+				case SDB::StringsList:
 					$ar = $val;
 
 					if (!is_array($ar)) {
@@ -158,25 +169,25 @@ class SDBBase
 					}
 					break;
 
-				case DB_IntsList:
+				case SDB::IntsList:
 					$ar = $val;
 
 					if (!is_array($ar)) {
 						$ar = array();
-						if (DEBUG) dwrite("Parameter '$k' is not DB_IntsList (not an array)", S_ERROR);
+						if (DEBUG) dwrite("Parameter '$k' is not SDB::IntsList (not an array)", S_ERROR);
 					}
 
 					$val = '';
 
 					foreach ($ar as $vl)
 					{
-						if (!is_numeric($vl)) { if (DEBUG) dwrite("Some elements in parameter '$k' are not DB_Int", S_ERROR); }
+						if (!is_numeric($vl)) { if (DEBUG) dwrite("Some elements in parameter '$k' are not SDB::Int", S_ERROR); }
 						$rv = intval($vl);
 						$val .= ($val==''?'':',') . $this->quote($rv);
 					}
 					break;
 
-				case DB_TableName:
+				case SDB::TableName:
 					$val = strval($val);
 
 					if (strlen($val) > $parm['s']) {
@@ -187,7 +198,7 @@ class SDBBase
 					$val = $this->quote_table($val);
 					break;
 
-				case DB_FieldName:
+				case SDB::FieldName:
 					$val = strval($val);
 
 					if (strlen($val) > $parm['s']) {
@@ -225,8 +236,8 @@ class SDBBase
 
 		$res .= (array_key_exists($str, $arr) ? $arr[$str] : $str);
 
-		if (count($cmd->limit) == 1) $res .= ' LIMIT '.intval($cmd->limit[0]);
-		elseif (count($cmd->limit) == 2) $res .= ' LIMIT '.intval($cmd->limit[0]).','.intval($cmd->limit[1]);
+		if (count($cmd->_limit) == 1) $res .= ' LIMIT '.intval($cmd->_limit[0]);
+		elseif (count($cmd->_limit) == 2) $res .= ' LIMIT '.intval($cmd->_limit[0]).','.intval($cmd->_limit[1]);
 
 		if (DEBUG)
 		{
@@ -238,33 +249,30 @@ class SDBBase
 	}
 
 	##
-	# = array i_run_query(string $sql, bool $is_exec)
+	# = public abstract array run_query(string $sql, mixed $type)
 	# [$sql] SQL query to execute
-	# [$is_exec] false = select command, true = non-select command
+	# [$type] Command type (SDBBase::Select, SDBBase::Insert or SDBBase::Execute)
 	# {$result['result']} Command result (resource or class, depending on db driver)
 	# {$result['error']} Empty string - no errors
 	# {$result['affected']} Number of affected rows (for exec queries)
 	# {$result['selected']} Number of selected rows (for non-exec queries)
 	##
-	function i_run_query($sql, $is_exec)
-	{
-		error('SDBBase.i_run_query must be overrided');
-	}
+	public abstract function run_query($sql, $type);
 
 	##
-	# = mixed i_query(SDBCommand &$cmd, bool $is_exec=false)
+	# = public mixed query(SDBCommand &$cmd, mixed $is_exec=false)
 	# [$cmd] Command to execute
-	# [$is_exec] false = select command, true = non-select command
+	# [$type] Command type (SDBBase::Select, SDBBase::Insert or SDBBase::Execute)
 	##
-	function i_query(&$cmd, $is_exec=false)
+	public function query($cmd, $type=SDBBase::Select)
 	{
 		global $s_runconf;
-		$sql = $this->i_parse($cmd);
+		$sql = $this->parse($cmd);
 
 		if (DEBUG)
 		{
 			$t1 = get_microtime();
-			$res = $this->i_run_query($sql, $is_exec);
+			$res = $this->run_query($sql, $type);
 			$t2 = get_microtime();
 
 			if ($res['error'])
@@ -279,35 +287,29 @@ class SDBBase
 				dwrite("<b>Success [</b>".htmlspecialchars($sql)."<b>] $rows_str</b> (".number_format($dt, 8).")", ($dt<0.1 ? S_SUCCESS : S_ACCENT));
 			}
 		}
-		else { $res = $this->i_run_query($sql, $is_exec); }
+		else { $res = $this->run_query($sql, $type); }
 
 		return $res['result'];
 	}
 
 	##
-	# = abstract string quote(string $str)
+	# = public abstract string quote(string $str)
 	# Quote and escape string
 	##
-	function quote($str)
-	{
-		error('SDBBase.quote must be overrided');
-	}
+	public abstract function quote($str);
 
 	##
-	# = abstract string i_quote_names(string $name)
+	# = public abstract string quote_names(string $name)
 	# Quote table and field names
 	##
-	function i_quote_names($name)
-	{
-		error('SDBBase.quote_names must be overrided');
-	}
+	public abstract function quote_names($name);
 
 	##
-	# = string quote_like(string $str)
+	# = public string quote_like(string $str)
 	# Quote (and escape) string to use in like expressions (additionally escapes '%' and '_' symbols)
 	# **TODO:** Check escaping method in sqlite
 	##
-	function quote_like($str)
+	public function quote_like($str)
 	{
 		$str = $this->quote($str);
 		$str = str_replace(array('%', '_'), array('\\%', '\\_'), $str);
@@ -315,64 +317,52 @@ class SDBBase
 	}
 
 	##
-	# = string quote_table(string $str)
+	# = public string quote_table(string $str)
 	# Quote and escape table name
 	##
-	function quote_table($name)
+	public function quote_table($name)
 	{
-		return $this->i_quote_names($this->prefix.$name);
+		return $this->quote_names($this->prefix . $name);
 	}
 
 	##
-	# = string quote_field(string $str)
+	# = public string quote_field(string $str)
 	# Quote and escape field name
 	##
-	function quote_field($name)
+	public function quote_field($name)
 	{
-		return $this->i_quote_names($name);
+		return $this->quote_names($name);
 	}
 
 	##
-	# = abstract int execute(SDBCommand &$cmd)
+	# = public abstract int execute(SDBCommand &$cmd)
 	# Execute non-select command. Returns last insert id
 	##
-	function execute(&$cmd)
-	{
-		error('SDBBase.execute must be overrided');
-	}
+	public abstract function execute($cmd);
 
 	##
-	# = abstract array get_all(SDBCommand &$cmd)
+	# = public abstract array get_all(SDBCommand &$cmd)
 	# Execute select command, and return results as array of assoc arrays
 	##
-	function get_all(&$cmd)
-	{
-		error('SDBBase.get_all must be overrided');
-	}
+	public abstract function get_all($cmd);
 
 	##
-	# = abstract mixed get_row(SDBCommand &$cmd)
+	# = public abstract mixed get_row(SDBCommand &$cmd)
 	# Execute select command, and return associative array of first result row or null if no records found
 	##
-	function get_row(&$cmd)
-	{
-		error('SDBBase.get_row must be overrided');
-	}
+	public abstract function get_row($cmd);
 
 	##
-	# = abstract mixed get_one(SDBCommand &$cmd)
+	# = public abstract mixed get_one(SDBCommand &$cmd)
 	# Execute select command, and return first field of first row or null if no records found
 	##
-	function get_one(&$cmd)
-	{
-		error('SDBBase.get_one must be overrided');
-	}
+	public abstract function get_one($cmd);
 
 	##
-	# = SDBCommand create_count_cmd(SDBCommand &$cmd)
+	# = public SDBCommand create_count_cmd(SDBCommand &$cmd)
 	# Translate "SELECT a,d,c,d FROM t WHERE x=y" to "SELECT COUNT(*) FROM t WHERE x=y"
 	##
-	function create_count_cmd(&$cmd)
+	public function create_count_cmd($cmd)
 	{
 		$sql = $cmd->command;
 
@@ -389,57 +379,51 @@ class SDBBase
 		$res = 'SELECT COUNT(*) FROM ' . substr($sql, $pos+6);
 
 		$cmdx = new SDBCommand($res, $this);
-		$cmdx->params = $cmd->params;
-		$cmdx->limit = $cmd->limit;
+		$cmdx->_params = $cmd->_params;
+		$cmdx->_limit = $cmd->_limit;
 		return $cmdx;
 	}
 
 	##
-	# = abstract array i_get_tables_list()
+	# = public abstract array get_tables_list()
 	# Must return array of table names
 	##
-	function i_get_tables_list()
-	{
-		error('SDBBase.i_get_tables_list must be overrided');
-	}
+	public abstract function do_get_tables_list();
 
 	##
-	# = array get_tables_list()
+	# = public array get_tables_list()
 	# Returns array of table names (use cache if possible)
 	##
-	function get_tables_list()
+	public function get_tables_list()
 	{
-		if ($this->tables === null) { $this->tables = $this->i_get_tables_list(); }
+		if ($this->tables === null) { $this->tables = $this->do_get_tables_list(); }
 		return $this->tables;
 	}
 
 	##
-	# = abstract array i_get_table_columns(string $table)
+	# = public abstract array get_table_columns(string $table)
 	# Must return assoc array of table fields.
 	# **$key** - field name
 	# **$result[$key]['t']** - field type
 	# **$result[$key]['s']** - field size
 	##
-	function i_get_table_columns()
-	{
-		error('SDBBase.i_get_table_columns must be overrided');
-	}
+	public function abstract do_get_table_columns();
 
 	##
-	# = array get_table_columns(string $table)
+	# = public array get_table_columns(string $table)
 	# Returns assoc array of table fields (use cache if possible)
 	##
-	function get_table_columns($table)
+	public function get_table_columns($table)
 	{
-		if (!array_key_exists($table, $this->tables_columns)) { $this->tables_columns[$table] = $this->i_get_table_columns($table); }
+		if (!array_key_exists($table, $this->tables_columns)) { $this->tables_columns[$table] = $this->do_get_table_columns($table); }
 		return $this->tables_columns[$table];
 	}
 
 	##
-	# = void reset_cached_data()
+	# = public void reset_cached_data()
 	# Clear cached data (tables, table fields)
 	##
-	function reset_cached_data()
+	public function reset_cached_data()
 	{
 		$this->tables = null;
 		$this->tables_columns = array();

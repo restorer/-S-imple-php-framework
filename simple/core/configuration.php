@@ -14,10 +14,10 @@
 ##
 class SConfig
 {
-	protected var $conf = array();
+	protected $conf = array();
 
 	##
-	# = void clear()
+	# = public void clear()
 	##
 	public function clear()
 	{
@@ -25,7 +25,7 @@ class SConfig
 	}
 
 	##
-	# = void set(string $path, mixed $value)
+	# = public void set(string $path, mixed $value)
 	##
 	public function set($path, $value)
 	{
@@ -45,7 +45,7 @@ class SConfig
 	}
 
 	##
-	# = mixed get(string $path, mixed $def)
+	# = public mixed get(string $path, mixed $def)
 	# [$def] default value which is used when config doesn't have values it **$path**
 	##
 	public function get($path, $def=null)
@@ -64,7 +64,7 @@ class SConfig
 	}
 
 	##
-	# = bool has(string $path)
+	# = public bool has(string $path)
 	##
 	public function has($path)
 	{
@@ -73,7 +73,7 @@ class SConfig
 	}
 
 	##
-	# = SConfig sub(string $path)
+	# = public SConfig sub(string $path)
 	# Creates sub-config
 	##
 	public function sub($path)
@@ -81,7 +81,7 @@ class SConfig
 		$sub = $this->get($path);
 		if ($sub === null) return null;
 
-		$res =& new SConfig();
+		$res = new SConfig();
 
 		if (is_array($sub)) {
 			$res->conf = $sub;
@@ -100,12 +100,12 @@ class SConfig
 ##
 # [$s_config] global config
 ##
-$s_config =& new SConfig();
+$s_config = new SConfig();
 
 ##
 # [$s_runconf] runtime config
 ##
-$s_runconf =& new SConfig();
+$s_runconf = new SConfig();
 
 ##
 # = void conf_set(string $path, mixed $value)

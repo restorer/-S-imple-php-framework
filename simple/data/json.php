@@ -10,29 +10,29 @@
 
 ##
 # .begin
-# = class JsonBase
+# = abstract class JsonBase
 ##
-class JsonBase
+abstract class JsonBase
 {
-	var $value;
+	protected $value;
 
 	##
-	# = mixed get()
+	# = public mixed get()
 	##
-	function get()
+	public function get()
 	{
 		return $this->value;
 	}
 
 	##
-	# = abstract void set(mixed $value)
+	# = public abstract void set(mixed $value)
 	##
-	function set($value) { error('JsonBase.set must be overrided'); }
+	public abstract function set($value);
 
 	##
-	# = abstract string serialize()
+	# = public abstract string serialize()
 	##
-	function serialize() { error('JsonBase.serialize must be overrided'); }
+	public abstract function serialize();
 }
 ##
 # .end
@@ -44,31 +44,26 @@ class JsonBase
 ##
 class JsonBool extends JsonBase
 {
-	function JsonBool($value = false)
-	{
-		$this->__construct($value);
-	}
-
 	##
-	# = void __construct(bool $value = false)
+	# = public void __construct(bool $value = false)
 	##
-	function __construct($value = false)
+	public function __construct($value = false)
 	{
 		$this->set($value);
 	}
 
 	##
-	# = void set(bool $value)
+	# = public void set(bool $value)
 	##
-	function set($value)
+	public function set($value)
 	{
 		$this->value = cast_bool($value);
 	}
 
 	##
-	# = string serialize()
+	# = public string serialize()
 	##
-	function serialize()
+	public function serialize()
 	{
 		return ($this->value ? 'true' : 'false');
 	}
@@ -83,31 +78,26 @@ class JsonBool extends JsonBase
 ##
 class JsonString extends JsonBase
 {
-	function JsonString($value = '')
-	{
-		$this->__construct($value);
-	}
-
 	##
-	# = void __construct(string $value = '')
+	# = public void __construct(string $value = '')
 	##
-	function __construct($value = '')
+	public function __construct($value = '')
 	{
 		$this->set($value);
 	}
 
 	##
-	# = void set(string $value)
+	# = public void set(string $value)
 	##
-	function set($value)
+	public function set($value)
 	{
 		$this->value = strval($value);
 	}
 
 	##
-	# = string serialize()
+	# = public string serialize()
 	##
-	function serialize()
+	public function serialize()
 	{
 		$find = array('\\',   '"',  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
 		$repl = array('\\\\', '\"', '\/', '\b', '\f', '\n', '\r', '\t', '\u');
@@ -124,31 +114,26 @@ class JsonString extends JsonBase
 ##
 class JsonNumber extends JsonBase
 {
-	function JsonNumber($value = 0)
-	{
-		$this->__construct($value);
-	}
-
 	##
-	# = void __construct(float $value = 0)
+	# = public void __construct(float $value = 0)
 	##
-	function __construct($value = 0)
+	public function __construct($value = 0)
 	{
 		$this->set($value);
 	}
 
 	##
-	# = void set(float $value)
+	# = public void set(float $value)
 	##
-	function set($value)
+	public function set($value)
 	{
 		$this->value = floatval($value);
 	}
 
 	##
-	# = string serialize()
+	# = public string serialize()
 	##
-	function serialize()
+	public function serialize()
 	{
 		return strval($this->value);
 	}
@@ -163,40 +148,35 @@ class JsonNumber extends JsonBase
 ##
 class JsonArray extends JsonBase
 {
-	function JsonArray($value = array())
-	{
-		$this->__construct($value);
-	}
-
 	##
-	# = void __construct(array $value = array())
+	# = public void __construct(array $value = array())
 	##
-	function __construct($value = array())
+	public function __construct($value = array())
 	{
 		$this->set($value);
 	}
 
 	##
-	# = void set(array $value)
+	# = public void set(array $value)
 	##
-	function set($value)
+	public function set($value)
 	{
 		if (is_array($value)) $this->value = $value;
 		else $this->value = array();
 	}
 
 	##
-	# = void add(JsonBase $item)
+	# = public void add(JsonBase $item)
 	##
-	function add($item)
+	public function add($item)
 	{
 		$this->value[] = $item;
 	}
 
 	##
-	# = string serialize()
+	# = public string serialize()
 	##
-	function serialize()
+	public function serialize()
 	{
 		$res = '';
 
@@ -219,40 +199,35 @@ class JsonArray extends JsonBase
 ##
 class JsonObject extends JsonBase
 {
-	function JsonObject($value = array())
-	{
-		$this->__construct($value);
-	}
-
 	##
-	# = void __construct(array $value = array())
+	# = public void __construct(array $value = array())
 	##
-	function __construct($value = array())
+	public function __construct($value = array())
 	{
 		$this->set($value);
 	}
 
 	##
-	# = void set(array $value)
+	# = public void set(array $value)
 	##
-	function set($value)
+	public function set($value)
 	{
 		if (is_array($value)) $this->value = $value;
 		else $this->value = array();
 	}
 
 	##
-	# = void add(string $key, JsonBase $item)
+	# = public void add(string $key, JsonBase $item)
 	##
-	function add($key, $item)
+	public function add($key, $item)
 	{
 		$this->value[$key] = $item;
 	}
 
 	##
-	# = string serialize()
+	# = public string serialize()
 	##
-	function serialize()
+	public function serialize()
 	{
 		$res = '';
 
