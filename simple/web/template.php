@@ -353,6 +353,7 @@ class STemplate
 
 		if (DEBUG)
 		{
+			$sql_t = $s_runconf->get('time.sql.parse') + $s_runconf->get('time.sql.query');
 			$st = get_microtime();
 
 			$nested = $s_runconf->get('tpl.nested', array());
@@ -364,6 +365,8 @@ class STemplate
 
 		if (!function_exists($funcname))
 		{
+			if (!file_exists($filename)) throw new Exception("Template \"$filename\" doesn't exists");
+
 			$dir = substr(dirname($filename), strlen(BASE));
 			$rdir = conf('cache.path').$dir;
 			if ($dir!='' && !is_dir($rdir)) make_directory($rdir);
@@ -401,11 +404,13 @@ class STemplate
 		if (DEBUG)
 		{
 			$res = call_user_func($funcname, $this, $this->vars);
-			$dt = get_microtime() - $st;
+			$dt = get_microtime() - $st - ($s_runconf->get('time.sql.parse') + $s_runconf->get('time.sql.query') - $sql_t);
 
 			$nested = $s_runconf->get('tpl.nested');
-			$rdt = $dt - $nested[count($nested)-1];
-			array_splice($nested, count($nested)-1);
+
+			$curr = array_splice($nested, count($nested)-1);
+			$rdt = $dt - $curr[0];
+
 			if (count($nested)) $nested[count($nested)-1] += $dt;
 			$s_runconf->set('tpl.nested', $nested);
 

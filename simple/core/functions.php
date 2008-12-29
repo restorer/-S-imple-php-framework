@@ -14,17 +14,24 @@ define('S_SUCCESS', 2);
 define('S_ACCENT', 3);
 define('S_NOTICE', 4);
 
-/*
- * Based on code from PHP Compat
- */
 function i_get_backtrace($funcnames=array())
 {
 	$backtrace = debug_backtrace();
 
+	if (count($backtrace) &&
+		array_key_exists('args', $backtrace[count($backtrace)-1]) &&
+		count($backtrace[count($backtrace)-1]['args'] == 1) &&
+ 		($backtrace[count($backtrace)-1]['args'][0] instanceof Exception))
+	{
+		$trace = $backtrace[count($backtrace)-1]['args'][0]->getTrace();
+		array_pop($backtrace);
+		$backtrace = array_merge($backtrace, $trace);
+	}
+
 	$skip_it = array('i_get_backtrace' => true);
 	foreach ($funcnames as $funcname) $skip_it[$funcname] = true;
 
-	for ($i = 0; $i<3+count($funcnames) && count($backtrace); $i++) {
+	for ($i = 0; $i < (3 + count($funcnames)) && count($backtrace); $i++) {
 		if (array_key_exists($backtrace[0]['function'], $skip_it)) {
 			array_shift($backtrace);
 		}
@@ -38,7 +45,7 @@ function i_get_backtrace($funcnames=array())
 		$line = (array_key_exists('line', $call) ? $call['line'] : '?');
 		$function = (array_key_exists('class', $call) ? ($call['class'] . '.' . $call['function']) : $call['function']);
 
-		$res[] = array('ind' => $ind, 'loc' => $location, 'line' => $line, 'func' => $function);
+		$res[] = array('ind' => count($backtrace) - $ind, 'loc' => $location, 'line' => $line, 'func' => $function);
 	}
 
 	return $res;
@@ -64,15 +71,17 @@ function i_get_backtrace_text($funcnames=array())
 	}
 
 	$arr = array();
+	$sep = array();
 	$total = 0;
 
 	foreach ($hdr as $key=>$str)
 	{
 		$arr[] = sprintf('%-' . $sizes[$key] . 's', $str);
+		$sep[] = sprintf("%'-'-" . $sizes[$key] . 's', '');
 		$total += $sizes[$key];
 	}
 
-	$res = implode(' | ', $arr) . "\n" . sprintf("%'-'-" . ($total + (count($hdr) * 3 - 3)) . 's', '') . "\n";
+	$res = implode(' | ', $arr) . "\n" . implode('-+-', $sep) . "\n";
 
 	foreach ($calls as $call)
 	{
@@ -86,6 +95,42 @@ function i_get_backtrace_text($funcnames=array())
 	}
 
 	return $res;
+}
+
+function get_debuglog_html($debuglog_str)
+{
+	$debuglog_str = htmlspecialchars($debuglog_str);
+	$lines = explode("\n", $debuglog_str);
+
+	foreach ($lines as &$line)
+	{
+		$line = preg_replace("/\*\*(.+?)\*\*/", '<span style="font-weight:bold">$1</span>', $line);
+		$line = preg_replace("/!!(.+?)!!/", '<span style="color:red;font-weight:bold;">$1</span>', $line);
+
+		if (preg_match("/^[^\.]+\.[^:]+:[ ]\((.)\)/", $line, $mt))
+		{
+			switch ($mt[1])
+			{
+				case 'E':
+					$line = '<span style="color:#F00">' . $line . '</span>';
+					break;
+
+				case ' ':
+					$line = '<span style="color:#080">' . $line . '</span>';
+					break;
+
+				case '*':
+					$line = '<span style="color:#A40">' . $line . '</span>';
+					break;
+
+				case 'I':
+					$line = '<span style="color:#00F">' . $line . '</span>';
+					break;
+			}
+		}
+	}
+
+	return implode("\n", $lines);
 }
 
 ##
@@ -107,7 +152,7 @@ function error($message, $rm_from_backtrace=false)
 		{
 			$message = htmlspecialchars($message);
 			$backtrace_str = htmlspecialchars($backtrace_str);
-			$debuglog_str = htmlspecialchars($debuglog_str);
+			$debuglog_str = get_debuglog_html($debuglog_str);
 
 			echo "<pre>$message\n\n$backtrace_str\n\n$debuglog_str</pre>";
 		}
@@ -132,6 +177,13 @@ function i_on_php_error($code, $message, $filename='', $linenumber=-1, $context=
 }
 
 set_error_handler('i_on_php_error');
+
+function i_on_uncaught_exception($ex)
+{
+	error('Uncaught exception (' . $ex->getFile() . ':' . $ex->getLine() . '): ' . $ex->getMessage(), true);
+}
+
+set_exception_handler('i_on_uncaught_exception');
 
 ##
 # = string dump_str(string $var, int $indent=0)

@@ -36,5 +36,5 @@ dwrite_msg('', dump_str($dc->blocks));
 	}
 }
 
-$page =& new IndexPage();
+$page = new IndexPage();
 $page->process();

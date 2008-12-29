@@ -24,6 +24,8 @@ class SCGI
 	##
 	public static function init()
 	{
+		global $s_runconf;
+
 		if (!isset($_SESSION)) @session_start();
 
 		if (ini_get('magic_quotes_gpc'))
@@ -32,6 +34,13 @@ class SCGI
 			$_POST = self::stripslashes_deep($_POST);
 			/* $_COOKIE ? */
 		}
+
+		define('ROOT', conf('http.root'));
+		define('SSL_ROOT', conf('ssl.root'));
+
+		$s_runconf->set('time.sql.query', 0);
+		$s_runconf->set('time.sql.parse', 0);
+		$s_runconf->set('time.template', 0);
 	}
 
 	##

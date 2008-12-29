@@ -28,11 +28,19 @@ function expand_tilde($path) {
 
 if (!conf_has('debug')) conf_set('debug', true);
 if (!conf_has('log_errors')) conf_set('log_errors', false);
-if (!conf_has('log.path')) conf_set('log.path', '~/cache/debug.log');
+if (!conf_has('modules.autoload')) conf_set('modules.autoload', array());
 
+if (!conf_has('log.path')) conf_set('log.path', '~cache/debug.log');
+conf_set('log.path', expand_tilde(conf('log.path')));
+
+define('DEBUG', conf('debug'));
+define('LOG_ERRORS', conf('log_errors'));
+
+if (!conf_has('cgi.init')) conf_set('cgi.init', true);
 if (!conf_has('http.port')) conf_set('http.port', 80);
 if (!conf_has('ssl.port')) conf_set('ssl.port', 443);
 if (!conf_has('ssl.root')) conf_set('ssl.root', conf('http.root'));
+if (!conf_has('cookie.domain')) conf_set('cookie.domain', '/');
 if (!conf_has('db.prefix')) conf_set('db.prefix', '');
 if (!conf_has('format.date')) conf_set('format.date', 'd.m.Y');
 if (!conf_has('format.datetime')) conf_set('format.datetime', 'd.m.Y H:i');
@@ -46,26 +54,17 @@ if (!conf_has('mail.smtp.port')) conf_set('mail.smtp.port', 25);
 if (!conf_has('mail.smtp.ssl')) conf_set('mail.smtp.ssl', true);
 if (!conf_has('mail.smtp.timeout')) conf_set('mail.smtp.timeout', 30);
 
-conf_set('log.path', expand_tilde(conf('log.path')));
-
-define('ROOT', conf('http.root'));
-define('SSL_ROOT', conf('ssl.root'));
-define('DEBUG', conf('debug'));
-define('LOG_ERRORS', conf('log_errors'));
-
-$s_runconf->set('time.sql.query', 0);
-$s_runconf->set('time.sql.parse', 0);
-$s_runconf->set('time.template', 0);
-
 require_once(S_BASE.'core/functions.php');
+$modules = conf('modules.autoload');
 
-if (conf_has('modules.autoload'))
+if (conf('cgi.init'))
 {
-	$arr = conf('modules.autoload');
+	require_once(S_BASE . 'web/cgi.php');
+	SCGI::init();
+}
 
-	foreach ($arr as $name)
-	{
-		if (strpos($name, '/') !== false) { require_once(S_BASE.$name.'.php'); }
-		else { require_once(S_BASE.$name.'/all.php'); }
-	}
+foreach ($modules as $name)
+{
+	if (strpos($name, '/') !== false) { require_once(S_BASE . $name . '.php'); }
+	else { require_once(S_BASE . $name . '/all.php'); }
 }
