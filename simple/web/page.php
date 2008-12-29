@@ -51,52 +51,42 @@ class SPage
 	##
 	# [$vars] Template variables
 	##
-	var $vars = array();
+	public $vars = array();
 
-	var $validators = array();
-	var $controls = array();
+	public $validators = array();
+	public $controls = array();
 
 	##
 	# [$template_name] Page template
 	##
-	var $template_name = '';
+	public $template_name = '';
 
 	##
 	# [$design_page_name] Design template
 	##
-	var $design_page_name = '';
+	public $design_page_name = '';
 
 	##
 	# [$error_page_name] Error page template
 	##
-	var $error_page_name = '';
+	public $error_page_name = '';
 
 	##
 	# [$content_type] Content-type
 	##
-	var $content_type = 'text/html';
+	public $content_type = 'text/html';
 
-	##
-	# [$squeeze]
-	##
-	var $squeeze = true;
+	public $form_data = array();	// used while render form and form controls
 
-	var $form_data = array();	// used while render form and form controls
-
-	var $_start_time = 0;
-	var $_flow = PAGE_FLOW_NORMAL;
-	var $_events = array();
-	var $_error_message = '';
-	var $_redirect = '';
-	var $_headers = array();
-	var $_form_posted = '';
-	var $_form_action = '';
-	var $_uploaded_files = array();
-
-	function SPage()
-	{
-		$this->__construct();
-	}
+	protected $_start_time = 0;
+	protected $_flow = PAGE_FLOW_NORMAL;
+	protected $_events = array();
+	protected $_error_message = '';
+	protected $_redirect = '';
+	protected $_headers = array();
+	protected $_form_posted = '';
+	protected $_form_action = '';
+	protected $_uploaded_files = array();
 
 	##
 	# = void __construct()
@@ -108,7 +98,7 @@ class SPage
 
 		if (DEBUG)
 		{
-			dwrite("<b>[Page processing begin]</b>");
+			dwrite("**[Page processing begin]**");
 
 			if (conf('page.show_vars', false))
 			{
@@ -126,19 +116,19 @@ class SPage
 	}
 
 	##
-	# = string script_name()
+	# = public string script_name()
 	# Returns script name (w/o .php extension)
 	##
-	function script_name()
+	public function script_name()
 	{
 		return basename($_SERVER['SCRIPT_NAME'], '.php');
 	}
 
 	##
-	# = void cache_set(string $name, mixed $value)
+	# = public void cache_set(string $name, mixed $value)
 	# Set value in cache (session keys **"page.<script_name>.<name>"** is used as cache)
 	##
-	function cache_set($name, $value)
+	public function cache_set($name, $value)
 	{
 		$arr = _SESSION('page.'.$this->script_name(), array());
 		$arr[$name] = $value;
@@ -146,10 +136,10 @@ class SPage
 	}
 
 	##
-	# = void cache_remove(string $name)
+	# = public void cache_remove(string $name)
 	# Remove value from cache
 	##
-	function cache_remove($name)
+	public function cache_remove($name)
 	{
 		if (InSESSION('page.'.$this->script_name())) {
 			if (array_key_exists($name, $_SESSION['page.'.$this->script_name()])) {
@@ -159,32 +149,32 @@ class SPage
 	}
 
 	##
-	# = mixed cache_get(string $name, mixed $def='')
+	# = public mixed cache_get(string $name, mixed $def='')
 	# Get value from cache
 	##
-	function cache_get($name, $def='')
+	public function cache_get($name, $def='')
 	{
 		$arr = _SESSION('page.'.$this->script_name(), array());
 		return (array_key_exists($name, $arr) ? $arr[$name] : $def);
 	}
 
 	##
-	# = void add_validator(string $field, &$validator)
+	# = public void add_validator(string $field, &$validator)
 	# [$field] Field name
 	# [$validator] Instantiated validator class
 	##
-	function add_validator($field, &$validator)
+	public function add_validator($field, $validator)
 	{
 		if (!array_key_exists($field, $this->validators)) $this->validators[$field] = array();
-		$this->validators[$field][] =& $validator;
+		$this->validators[$field][] = $validator;
 	}
 
 	##
-	# = void add_validators(string $field, array $arr)
+	# = public void add_validators(string $field, array $arr)
 	# [$field] Field name
 	# [$arr] Array of validators
 	##
-	function add_validators($field, $arr)
+	public function add_validators($field, $arr)
 	{
 		foreach ($arr as $k=>$v) {
 			$this->add_validator($field, $arr[$k]);
@@ -192,11 +182,11 @@ class SPage
 	}
 
 	##
-	# = void add_control($name, &$ctl)
+	# = public void add_control($name, $ctl)
 	# [$name] Control name
 	# [$ctl] Instantiated control class
 	##
-	function add_control($name, &$ctl)
+	public function add_control($name, $ctl)
 	{
 		if (array_key_exists($name, $this->controls)) {
 			if (DEBUG) dwrite("Control '$name' already added");
@@ -208,43 +198,42 @@ class SPage
 	}
 
 	##
-	# = SControl &get_control(string $name)
+	# = public SControl &get_control(string $name)
 	# [$name] Control name
 	# Returns added control by name
 	##
-	function &get_control($name)
+	public function get_control($name)
 	{
 		if (!array_key_exists($name, $this->controls)) error("Control '$name' not found");
-		$ctl =& $this->controls[$name];
-		return $ctl;
+		return $this->controls[$name];
 	}
 
 	##
-	# = void add_event(int $type, string $method_name)
+	# = public void add_event(int $type, string $method_name)
 	# [$type] Event type (PAGE_INIT or PAGE_PRE_RENDER)
 	# [$method_name] Class method, which will be called on event
 	##
-	function add_event($type, $method_name)
+	public function add_event($type, $method_name)
 	{
 		if (!array_key_exists($type, $this->_events)) $this->_events[$type] = array();
 		$this->_events[$type][] = $method_name;
 	}
 
 	##
-	# = mixed get_var(string $name, mixed $def='')
+	# = public mixed get_var(string $name, mixed $def='')
 	##
-	function get_var($name, $def='')
+	public function get_var($name, $def='')
 	{
 		return (array_key_exists($name, $this->vars) ? $this->vars[$name] : $def);
 	}
 
 	##
-	# = array validation_errors()
+	# = public array validation_errors()
 	# Returns assoc array of validation errors
 	# **key** - field name
 	# **$result[$key]** - validation error
 	##
-	function validation_errors()
+	public function validation_errors()
 	{
 		$errors = array();
 
@@ -266,29 +255,29 @@ class SPage
 	}
 
 	##
-	# = void validate()
+	# = public void validate()
 	# Validate page, and fill **'errors'** template variable with validation errors
 	##
-	function validate()
+	public function validate()
 	{
 		$this->vars['errors'] = $this->validation_errors();
 	}
 
 	##
-	# = bool is_valid()
+	# = public bool is_valid()
 	# Returns **true** if page is valid, **false** otherwise
 	##
-	function is_valid()
+	public function is_valid()
 	{
 		if (!array_key_exists('errors', $this->vars)) $this->validate();
 		return (!count($this->get_var('errors', array())));
 	}
 
 	##
-	# = protected void i_process_post()
+	# = protected void _process_post()
 	# Internal POST parsing. When value **'_s_<form-name>_action'** exists in post, set **posted form name** and **form action**
 	##
-	function i_process_post()
+	protected function _process_post()
 	{
 		foreach ($_POST as $k=>$v)
 		{
@@ -319,29 +308,29 @@ class SPage
 				}
 				else { $this->_uploaded_files[$k] = UPLOAD_ERR_PARTIAL; }
 			}
-			elseif ($v["error"] != UPLOAD_ERR_NO_FILE) {
+			elseif ($v['error'] != UPLOAD_ERR_NO_FILE) {
 				$this->_uploaded_files[$k] = $v['error'];
 			}
 		}
 	}
 
 	##
-	# = bool file_is_uploaded(string $name)
+	# = public bool file_is_uploaded(string $name)
 	# [$name] Field name
 	# Returns **true** is file is uploaded without errors, **false** otherwise
 	##
-	function file_is_uploaded($name)
+	public function file_is_uploaded($name)
 	{
 		if (!array_key_exists($name, $this->_uploaded_files)) return false;
 		return ($this->_uploaded_files[$name] == UPLOAD_ERR_OK);
 	}
 
 	##
-	# = void move_upl_file(string $name, string $destination_path)
+	# = public void move_upl_file(string $name, string $destination_path)
 	# [$name] Field name
 	# [$destination_path] Destination path
 	##
-	function move_upl_file($name, $destination_path)
+	public function move_upl_file($name, $destination_path)
 	{
 		if (!$this->file_is_uploaded($name)) {
 			if (DEBUG) dwrite("Can't move uploaded file for field '$name' because this file not uploaded");
@@ -352,22 +341,22 @@ class SPage
 	}
 
 	##
-	# = bool is_post_back(string $form_name='')
+	# = public bool is_post_back(string $form_name='')
 	# Returns **true** is postback occurred (when form specified, also checks submitted form name), **false** otherwise
 	##
-	function is_post_back($form_name='')
+	public function is_post_back($form_name='')
 	{
 		if (!strlen($form_name)) return strlen($this->_form_posted);
 		return ($this->_form_posted == $form_name);
 	}
 
 	##
-	# = void set_select_data(string $name, array $data, string $group='__default__')
+	# = public void set_select_data(string $name, array $data, string $group='__default__')
 	# [$name] Select control id
 	# [$data] Select items, key => item id, value => value
 	# [$group] Items group
 	##
-	function set_select_data($name, $data, $group='__default__')
+	public function set_select_data($name, $data, $group='__default__')
 	{
 		$sd = $this->get_var($name.':data', array());
 		$sd[$group] = $data;
@@ -375,12 +364,12 @@ class SPage
 	}
 
 	##
-	# = bool check_select_items(string $name, array $data)
+	# = public bool check_select_items(string $name, array $data)
 	# [$name] Select control id
 	# [$data] Select items
 	# Returns **true** when submitted value exists in **$data**, **false** otherwise
 	##
-	function check_select_items($name, $data)
+	public function check_select_items($name, $data)
 	{
 		if (!array_key_exists($name, $this->vars)) return false;
 
@@ -396,19 +385,19 @@ class SPage
 	}
 
 	##
-	# = void validate_select_items(string $name, array $data)
+	# = public void validate_select_items(string $name, array $data)
 	# [$name] Select control id
 	# [$data] Select items
 	# Throws error, when submitted value not exists in **$data**
 	##
-	function validate_select_items($name, $data) {
+	public function validate_select_items($name, $data) {
 		if (!$this->check_select_items($name, $data)) error('Please stop hack us, evil haxor.');
 	}
 
 	##
-	# = void add_header(string $name, string $value)
+	# = protected void add_header(string $name, string $value)
 	##
-	function add_header($name, $value)
+	protected function add_header($name, $value)
 	{
 		foreach ($this->_headers as $k=>$v) {
 			if (strtolower($k) == strtolower($name)) {
@@ -420,23 +409,23 @@ class SPage
 		$this->_headers[$name] = $value;
 	}
 
-	function i_init()
+	protected function _init()
 	{
-		$this->i_process_post();
-
+		$this->_process_post();
 		if (!array_key_exists(PAGE_INIT, $this->_events)) return;
 
-		foreach ($this->_events[PAGE_INIT] as $method) {
-			call_user_func(array(&$this, $method));
+		foreach ($this->_events[PAGE_INIT] as $method)
+		{
+			call_user_func(array($this, $method));
 			if ($this->_flow != PAGE_FLOW_NORMAL) return;
 		}
 	}
 
 	##
-	# = protected void i_handle_forms()
+	# = protected void _handle_forms()
 	# Internal form handling, call **'on_<posted-form-name>_submit'** method (in page or in controls) when form submitted
 	##
-	function i_handle_forms()
+	protected function _handle_forms()
 	{
 		if (!strlen($this->_form_posted)) return;
 		$method = 'on_'.$this->_form_posted.'_submit';
@@ -449,12 +438,12 @@ class SPage
 
 		foreach ($this->controls as $k=>$v)
 		{
-			$ctl =& $this->controls[$k];
+			$ctl = $this->controls[$k];
 
 			if (method_exists($ctl, $method))
 			{
-				$ctl->page =& $this;
-				call_user_func(array(&$ctl, $method), $this->_form_action);
+				$ctl->page = $this;
+				call_user_func(array($ctl, $method), $this->_form_action);
 				return;
 			}
 		}
@@ -462,69 +451,55 @@ class SPage
 		if (DEBUG) dwrite("Method '$method' not defined");
 	}
 
-	function i_pre_render()
+	protected function _pre_render()
 	{
 		if (!array_key_exists(PAGE_PRE_RENDER, $this->_events)) return;
 
-		foreach ($this->_events[PAGE_PRE_RENDER] as $method) {
-			call_user_func(array(&$this, $method));
+		foreach ($this->_events[PAGE_PRE_RENDER] as $method)
+		{
+			call_user_func(array($this, $method));
 			if ($this->_flow != PAGE_FLOW_NORMAL) return;
 		}
 	}
 
 	##
-	# = void output_headers()
+	# = protected void output_headers()
 	# Output headers to browser. In most of cases, you don't need to call this method directly
 	##
-	function output_headers()
+	protected function output_headers()
 	{
 		$this->add_header('Content-type', $this->content_type);
 		foreach ($this->_headers as $k=>$v) header($k.': '.$v);
 	}
 
 	##
-	# = void output_result(string $res)
+	# = protected void output_result(string $res)
 	# Output result to browser. In most of cases, you don't need to call this method directly
 	##
-	function output_result($res)
+	protected function output_result($res)
 	{
 		global $s_runconf;
 		$nw = get_microtime();
 
 		$this->output_headers();
-
-		if ($this->squeeze)
-		{
-			$spl = explode("\n", $res);
-			$arr = array();
-
-			for ($i = 0; $i < count($spl); $i++)
-			{
-				$str = trim($spl[$i]);
-				if (strlen($str)) $arr[] = $str;
-			}
-
-			$res = implode("\n", $arr);
-		}
-
 		echo $res;
 
 		if  ($this->content_type=='text/html' && DEBUG)
 		{
-			dwrite('<b>[Page processing end]</b>');
+			dwrite('**[Page processing end]**');
 			dwrite('Page processing takes: ' . number_format(($nw - $this->_start_time), 8));
 			dwrite('SQL parsing takes: ' . number_format($s_runconf->get('time.sql.parse'), 8));
 			dwrite('SQL queries takes: ' . number_format($s_runconf->get('time.sql.query'), 8));
 			dwrite('Templates takes: ' . number_format($s_runconf->get('time.template'), 8) . ' (approx, including sql and template loading)');
-			dflush();
+			echo '<pre>' . htmlspecialchars(dflush_str()) . '</pre>';
 		}
 	}
 
 	##
-	# = string render_result()
+	# = protected string render_result()
 	# Render page to string. In most of cases, you don't need to call this method directly
 	##
-	function render_result()
+	protected function render_result()
 	{
 		$tpl =& new STemplate();
 		$tpl->vars =& $this->vars;
@@ -547,13 +522,13 @@ class SPage
 		return $res;
 	}
 
-	function render()
+	protected function render()
 	{
 		$this->output_result($this->render_result());
 		/* ob_flush(); */
 	}
 
-	function error_handler()
+	protected function error_handler()
 	{
 		$tpl =& new STemplate();
 		$tpl->vars =& $this->vars;
@@ -565,13 +540,13 @@ class SPage
 		$this->output_result($res);
 	}
 
-	function redirect_handler()
+	protected function redirect_handler()
 	{
 		header('location: ' . $this->_redirect);
 		echo ' ';
 	}
 
-	function process_flow()
+	protected function process_flow()
 	{
 		switch ($this->_flow)
 		{
@@ -582,30 +557,30 @@ class SPage
 	}
 
 	##
-	# = void break_flow()
+	# = protected void break_flow()
 	##
-	function break_flow()
+	protected function break_flow()
 	{
 		$this->_flow = PAGE_FLOW_BREAK;
 	}
 
 	##
-	# = void error(string $msg)
+	# = protected void error(string $msg)
 	# [$msg] Error message
 	# Render error page with error message, instead of normal page flow
 	##
-	function error($msg)
+	protected function error($msg)
 	{
 		$this->_error_message = $msg;
 		$this->_flow = PAGE_FLOW_ERROR;
 	}
 
 	##
-	# = void redirect(string $url)
+	# = protected void redirect(string $url)
 	# [$url] Redirect location
 	# Redirect to new location, instead of normal page flow
 	##
-	function redirect($url)
+	protected function redirect($url)
 	{
 		$this->_redirect = $url;
 		$this->_flow = PAGE_FLOW_REDIRECT;
@@ -615,15 +590,15 @@ class SPage
 	# = void process()
 	# Call this function to process page
 	##
-	function process()
+	public function process()
 	{
-		$this->i_init();
+		$this->_init();
 		if ($this->_flow != PAGE_FLOW_NORMAL) {$this->process_flow(); return;}
 
-		$this->i_handle_forms();
+		$this->_handle_forms();
 		if ($this->_flow != PAGE_FLOW_NORMAL) {$this->process_flow(); return;}
 
-		$this->i_pre_render();
+		$this->_pre_render();
 		if ($this->_flow != PAGE_FLOW_NORMAL) {$this->process_flow(); return;}
 
 		$this->render();

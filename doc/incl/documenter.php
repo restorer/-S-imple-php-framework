@@ -6,25 +6,25 @@ require_once(BASE.'incl/note_item.php');
 
 class ParsedDocNote
 {
-	var $name = '';
-	var $description = '';
+	public $name = '';
+	public $description = '';
 }
 
 class ParsedDocBlock
 {
-	var $command = '';
-	var $title = '';
-	var $notes = array();
-	var $text = '';
-	var $example = '';
+	public $command = '';
+	public $title = '';
+	public $notes = array();
+	public $text = '';
+	public $example = '';
 }
 
 class Documenter
 {
-	var $content = array();
-	var $blocks = array();
+	protected $content = array();
+	protected $blocks = array();
 
-	function i_load_file($filename)
+	protected function load_file($filename)
 	{
 		$buf = file_get_contents($filename);
 
@@ -38,7 +38,7 @@ class Documenter
 		}
 	}
 
-	function i_highlight_title($str)
+	protected function highlight_title($str)
 	{
 		$delimers = "()[]<> \t=-,";
 		$keywords = array('class', 'void', 'string', 'float', 'mixed', 'int', 'bool', 'static', 'date_string',
@@ -102,7 +102,7 @@ class Documenter
 		return $res;
 	}
 
-	function i_highlight_text($str)
+	protected function highlight_text($str)
 	{
 		$str = preg_replace('/\*\*([^\*]+)\*\*/', '<strong>$1</strong>', $str);
 		$str = preg_replace('/\#\#([^#]+)\#\#/', '<strong>$1</strong>', $str);
@@ -111,9 +111,9 @@ class Documenter
 		return $str;
 	}
 
-	function i_parse_block($block)
+	protected function parse_block($block)
 	{
-		$res =& new ParsedDocBlock();
+		$res = new ParsedDocBlock();
 
 		foreach ($block as $str)
 		{
@@ -127,7 +127,7 @@ class Documenter
 					break;
 
 				case '=':
-					$res->title = $this->i_highlight_title($rem);
+					$res->title = $this->highlight_title($rem);
 					break;
 
 				case '~':
@@ -135,11 +135,11 @@ class Documenter
 					break;
 
 				case '%':
-					$res->text .= (strlen($res->text) ? "\n" : '') . $this->i_highlight_text(htmlspecialchars($rem));
+					$res->text .= (strlen($res->text) ? "\n" : '') . $this->highlight_text(htmlspecialchars($rem));
 					break;
 
 				case '|':
-					$res->example .= (strlen($res->example) ? "\n" : '') . $this->i_highlight_title(htmlspecialchars($rem));
+					$res->example .= (strlen($res->example) ? "\n" : '') . $this->highlight_title(htmlspecialchars($rem));
 					break;
 
 				case '[':
@@ -148,9 +148,9 @@ class Documenter
 
 					if ($pos!==false && $pos>0)		/* $pos!==false is redudnant, but I like double-checking :) */
 					{
-						$nt =& new ParsedDocNote();
+						$nt = new ParsedDocNote();
 						$nt->name = trim(substr($rem, 0, $pos));
-						$nt->description = $this->i_highlight_text(trim(substr($rem, $pos+1)));
+						$nt->description = $this->highlight_text(trim(substr($rem, $pos+1)));
 						$res->notes[] = $nt;
 					}
 					else {
@@ -159,14 +159,14 @@ class Documenter
 					break;
 
 				default:
-					$res->text .= (strlen($res->text) ? "\n" : '') . $this->i_highlight_text(htmlspecialchars($str));
+					$res->text .= (strlen($res->text) ? "\n" : '') . $this->highlight_text(htmlspecialchars($str));
 			}
 		}
 
 		$this->blocks[] = $res;
 	}
 
-	function i_parse()
+	protected function _parse()
 	{
 		for ($i = 0; $i < count($this->content); $i++)
 		{
@@ -184,18 +184,18 @@ class Documenter
 					if (substr($str{0}, 0, 1) != '#') $block[] = $str;
 				}
 
-				if (count($block)) $this->i_parse_block($block);
+				if (count($block)) $this->parse_block($block);
 			}
 		}
 	}
 
-	function parse($filename)
+	public function parse($filename)
 	{
-		$this->i_load_file($filename);
-		$this->i_parse();
+		$this->load_file($filename);
+		$this->_parse();
 	}
 
-	function save($file)
+	public function save($file)
 	{
 		$parents = array();
 
@@ -203,24 +203,24 @@ class Documenter
 		{
 			if (strlen($block->title) || count($block->notes) || strlen($block->text))
 			{
-				$bi =& new BlockItem;
+				$bi = new BlockItem;
 				$bi->title = $block->title;
 				$bi->text = $block->text;
 				$bi->example = $block->example;
-				$bi->file_id = $file->get_id();
+				$bi->file_id = $file->id;
 				$bi->parent_id = (count($parents) ? $parents[count($parents)-1] : 0);
 				$bi->save();
 
 				foreach ($block->notes as $nt)
 				{
-					$ni =& new NoteItem();
+					$ni = new NoteItem();
 					$ni->name = $nt->name;
 					$ni->description = $nt->description;
-					$ni->block_id = $bi->get_id();
+					$ni->block_id = $bi->id;
 					$ni->save();
 				}
 
-				if ($block->command == 'begin') $parents[] = $bi->get_id();
+				if ($block->command == 'begin') $parents[] = $bi->id;
 			}
 			else
 			{

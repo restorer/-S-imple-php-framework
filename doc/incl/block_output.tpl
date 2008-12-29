@@ -1,13 +1,13 @@
-<div class="block <?= count($block->childs()) ? 'block-has-childs' : '' ?>">
+<div class="block <?= count($block->childs) ? 'block-has-childs' : '' ?>">
 	<? if strlen($block->title) ?>
 		<div class="block-title"><?= $block->title ?></div>
 	<? end ?>
 
-	<? each $block->notes() as $note ?>
+	<? each $block->notes as $note ?>
 		<?@ NoteOutput :note=>$note ?>
 	<? end ?>
 
-	<? if (strlen($block->title) || count($block->notes())) && strlen($block->text) ?>
+	<? if (strlen($block->title) || count($block->notes)) && strlen($block->text) ?>
 		<div class="block-sep">&nbsp;</div>
 	<? end ?>
 
@@ -22,7 +22,7 @@
 		</div>
 	<? end ?>
 
-	<? each $block->childs() as $child ?>
+	<? each $block->childs as $child ?>
 		<?@ BlockOutput :block=>$child ?>
 	<? end ?>
 </div>

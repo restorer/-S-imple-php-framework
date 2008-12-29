@@ -9,6 +9,6 @@
 <a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=225400&amp;type=5" width="210" height="62" border="0" alt="SourceForge.net Logo" /></a>
 </div>
 	<h1>Error occurred</h1>
-	<span class="error"><?# $__error__ ?></span>
+	<span class="error"><?@h $__error__ ?></span>
 </body>
 </html>

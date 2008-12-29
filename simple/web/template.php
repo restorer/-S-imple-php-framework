@@ -8,13 +8,6 @@
  * World fastest and simpliest php templates :)
  */
 
-/*
- * TODO: Check what faster:
- *       a) aaa <~php echo $__t->call('xxx') ~> bbb
- *       b) $__s.='aaa'; $__s.=$__t->call('xxx'); $__s.='bbb';
- *       If 'a' if faster, revert template to old model (ob_start / ob_get_contents / ob_end_flush)
- */
-
 define('LBRA', '<'.'?');
 define('RBRA', '?'.'>');
 
@@ -27,44 +20,81 @@ class STemplate
 	##
 	# [$vars] Template vars
 	##
-	var $vars = array();
+	public $vars = array();
 
 	##
 	# [$controls] Template controls
 	##
-	var $controls = array();
+	public $controls = array();
 
-	function i_escape($str)
+	##
+	# [$replacers] Macro replaces
+	# | $tpl->replacers['h'] = 'htmlspecialchars';
+	##
+	public $replacers = array(
+		'h' => 'htmlspecialchars',
+		'u' => 'urlencode',
+		'j' => 'js_escape'
+	);
+
+	##
+	# [$optimize_html] Drop empty lines and spaces at begin and end of each line
+	##
+	public $optimize_html = true;
+
+	protected function escape($str)
 	{
 		if (!strlen($str)) return '\'\'';
 
 		$res = '';
 		$spl = explode("\n", $str);
+		$len = count($spl);
 
-		foreach ($spl as $val)
+		for ($i = 0; $i < $len; $i++)
 		{
-			if (strlen($val)) {
-				$res .= '\'' . str_replace('\'', '\\\'', str_replace('\\', '\\\\', $val)) . '\'."\\n".';
-			} else {
-				$res .= '"\\n".';
+			$val = $spl[$i];
+
+			if (strlen($val))
+			{
+				$res .= '\'' . str_replace('\'', '\\\'', str_replace('\\', '\\\\', $val)) . '\'';
+				if ($i < $len-1) $res .= '."\\n".';
+			}
+			elseif ($i < $len-1)
+			{
+				if (substr($res, -2) == '".') $res = substr($res, 0, -2) . '\\n".';
+				else $res .= '"\\n".';
 			}
 		}
 
-		if ($str{strlen($str)-1} != "\n") $res = substr($res, 0, -5);
 		if ($res{strlen($res)-1} == '.') $res = substr($res, 0, -1);
-
 		return $res;
 	}
 
 	##
-	# = void parse(string $in, string $funcname)
-	# [$in] Parse from file
+	# = public void parse(string $buf, string $funcname)
+	# [$buf] String to parse
 	# [$funcname] Wrapper function name
 	##
-	function parse($in, $funcname)
+	public function parse($buf, $funcname)
 	{
-		$buf = file_get_contents($in);
 		$buf = str_replace(chr(0x0D), chr(0x0A), str_replace(chr(0x0A).chr(0x0D), chr(0x0A), str_replace(chr(0x0D).chr(0x0A), chr(0x0A), $buf)));
+
+		if ($this->optimize_html)
+		{
+			$spl = explode(chr(0x0A), $buf);
+			$buf = '';
+
+			foreach ($spl as $line)
+			{
+				$line = trim($line);
+
+				if (strlen($line))
+				{
+					$buf .= $line;
+					if (substr($line, -strlen(RBRA)) != RBRA) $buf .= "\n";
+				}
+			}
+		}
 
 		$pos = 0;
 		$res = '';
@@ -89,8 +119,7 @@ class STemplate
 				}
 
 				$text .= substr($buf, $pos, $lb-$pos);
-				$text = $this->i_escape($text);
-				if (strlen($text)) { $res .= '$__s.=' . $text . ";\n"; }
+				if (strlen($text)) { $res .= '$__s.=' . $this->escape($text) . ";\n"; }
 				$text = '';
 
 				$pos = $lb + $lbra_sz;
@@ -176,27 +205,32 @@ class STemplate
 					{
 						$op = $cnt{0};
 
-						if ($op=='!' || $op=='=' || $op=='#' || $op=='+' || $op=='^')
+						if ($op=='!' || $op=='=')
 						{
 							$cnt = trim(substr($cnt, 1));
 
 							if ($cnt != '')
 							{
 								if ($op == '!') { $stat = $cnt.';'; $post_process = false; }
-								elseif ($op == '=') $stat = '$__s.=(' . $cnt . ');';
-								elseif ($op == '#') $stat = '$__s.=htmlspecialchars(' . $cnt . ');';
-								elseif ($op == '+') $stat = '$__s.=urlencode(' . $cnt . ');';
-								elseif ($op == '^') $stat = '$__s.=jsencode(' . $cnt .');';
+								elseif ($op == '=') $stat = '$__s.=' . $cnt . ';';
 							}
 						}
 						elseif ($op == '@')
 						{
 							$cnt = trim(substr($cnt, 1));
 
-							if (preg_match('/^[A-Za-z0-9_]+\s*\(/', $cnt))
+							if (preg_match('/^([A-Za-z0-9_])+\s*\(\s*\)/', $cnt, $mt))
 							{
-								$stat = preg_replace('/^@([A-Za-z0-9_]+)\s*\(\s*\)/', '$__t->call(\'$1\');', '@'.$cnt);
-								$stat = preg_replace('/^@([A-Za-z0-9_]+)\s*\((.*)/', '$__t->call(\'$1\',$2;', $stat);
+								if (array_key_exists($mt[1], $this->replacers)) {
+									$stat = '$__s.=' . $this->replacers[$mt[1]] . '();';
+								} else {
+									$stat = '$__s.=$__t->call(\'' . $mt[1] . '\');';
+								}
+							}
+							elseif (preg_match('/^([A-Za-z0-9_])+\s*\(/', $cnt, $mt))
+							{
+								$rp = (array_key_exists($mt[1], $this->replacers) ? ($this->replacers[$mt[1]].'(') : "\$__t->call('{$mt[1]}',");
+								$stat = preg_replace('/^[A-Za-z0-9_]+\s*\(\s*(.*)\s*$/', "\$__s.={$rp}$1;", $cnt);
 							}
 							else
 							{
@@ -207,9 +241,23 @@ class STemplate
 								{
 									$args = trim($spl[1]);
 									if ($args{0} == ':') { $args = 'array('.$args.')'; }
-									$stat = '$__s.=$__t->call(\'' . $name . '\',' . $args . ');';
+
+									if (array_key_exists($name, $this->replacers)) {
+										$stat = '$__s.=' . $this->replacers[$name] . "($args);";
+									} else {
+										$stat = '$__s.=$__t->call(' . "'$name',$args);";
+									}
+
+									$stat = preg_replace('/([ \(,]):([A-Za-z_][A-Za-z0-9_]*)\s*=>/', '$1\'$2\'=>', $stat);
 								}
-								else { $stat = '$__s.=$__t->call(\'' . $name . '\');'; }
+								else
+								{
+									if (array_key_exists($name, $this->replacers)) {
+										$stat = '$__s.=' . $this->replacers[$name] . '();';
+									} else {
+										$stat = '$__s.=$__t->call(\'' . $name . '\');';
+									}
+								}
 							}
 						}
 						else
@@ -243,32 +291,34 @@ class STemplate
 						}
 					}
 
-					if ($post_process)
-					{
-						$stat = preg_replace('/@\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/', '$__t->call(\'$1\')', $stat);
-						$stat = preg_replace('/@\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(/', '$__t->call(\'$1\',', $stat);
-						$stat = preg_replace('/([ \(,]):([A-Za-z_][A-Za-z0-9_]*)\s*=>/', '$1\'$2\'=>', $stat);
-					}
+					/*
+					if ($post_process) {}
+					*/
 
 					$res .= $stat . "\n";
 				}
 			}
 		}
 
-		$text = $this->i_escape($text);
-		if (strlen($text)) $res .= '$__s.=' . $text . ";\n";
+		if (strlen($text)) $res .= '$__s.=' . $this->escape($text) . ";\n";
 
 		$res = 'function '.$funcname.'($__t,$__v){foreach($__v as $__k=>$__v) $$__k=$__v;$__s=\'\';'."\n".$res.'return $__s;'."\n}\n";
 		return $res;
 	}
 
-	function _echo()
+	##
+	# = public string _echo(...)
+	# Example of embedded control. Also useful in debugging.
+	##
+	public function _echo()
 	{
 		$args = func_get_args();
 		foreach ($args as $val) echo $val;
+
+		return '';
 	}
 
-	function call()
+	public function call()
 	{
 		$args = func_get_args();
 		$name = array_shift($args);
@@ -276,45 +326,20 @@ class STemplate
 		switch ($name)
 		{
 			case 'echo':
-				return call_user_func_array(array(&$this, '_echo'), $args);
+				return call_user_func_array(array($this, '_echo'), $args);
 
 			default:
 				if (!array_key_exists($name, $this->controls)) error("Control $name not found.");
-				return call_user_func_array(array(&$this->controls[$name], 'render'), $args);
+				return call_user_func_array(array($this->controls[$name], 'render'), $args);
 		}
 	}
 
-	function i_generate_funcname($filename)
+	protected function generate_funcname($filename)
 	{
-		$str = '2e_' . strtolower(substr($filename, strlen(BASE))) . './.';
-		$prev = false;
-		$funcname = '';
+		$res = strtolower(substr($filename, strlen(BASE)));
+		$res = preg_replace("/[^a-z0-9_]/", '', preg_replace("/[\-\.\\\\\/]/", '_', $res));
 
-		for ($i = 0; $i < strlen($str); $i++)
-		{
-			$ch = $str{$i};
-
-			if (($ch>='0' && $ch<='9') || ($ch>='a' && $ch<='z'))
-			{
-				$funcname .= $ch;
-				$prev = true;
-			}
-			else
-			{
-				if ($prev)
-				{
-					$funcname .= '_';
-					$prev = false;
-				}
-
-				$funcname .= sprintf('%02x', ord($ch)).'_';
-			}
-		}
-
-		if (substr($funcname, -1) == '_') $funcname = substr($funcname, 0, -1);
-
-		$funcname = '__s_tpl_'.$funcname;
-		return $funcname;
+		return ('__s_tpl_' . $res);
 	}
 
 	##
@@ -322,7 +347,7 @@ class STemplate
 	# [$filename] Path to template file
 	# Process template, compile it if necessary
 	##
-	function process($filename)
+	public function process($filename)
 	{
 		global $s_runconf;
 
@@ -335,7 +360,7 @@ class STemplate
 			$s_runconf->set('tpl.nested', $nested);
 		}
 
-		$funcname = $this->i_generate_funcname($filename);
+		$funcname = $this->generate_funcname($filename);
 
 		if (!function_exists($funcname))
 		{
@@ -351,7 +376,7 @@ class STemplate
 			if (!file_exists($rname) || filemtime($rname)<$mt)
 			{
 				dwrite('Parsing template "'.$rname.'"', S_ACCENT);
-				$parsed = $this->parse($filename, $funcname);
+				$parsed = $this->parse(file_get_contents($filename), $funcname);
 
 				if ($fp = @fopen($rname, 'wb'))
 				{

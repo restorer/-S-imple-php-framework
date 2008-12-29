@@ -17,27 +17,27 @@ class SEmailAttachment
 	##
 	# [$mime_type] Mime-type
 	##
-	var $mime_type = '';
+	public $mime_type = '';
 
 	##
 	# [$content] Attachment content
 	##
-	var $content = '';
+	public $content = '';
 
 	##
 	# [$file_name] Attachment name
 	##
-	var $file_name = '';
+	public $file_name = '';
 
 	##
 	# [$content_name] Content name (used when embedding images into email)
 	##
-	var $content_name = '';
+	public $content_name = '';
 
 	##
 	# [$content_id] Automatically generated field
 	##
-	var $content_id = '';
+	public $content_id = '';
 }
 ##
 # .end
@@ -52,53 +52,53 @@ class SEmail
 	##
 	# [$from_email] Email from
 	##
-	var $from_email = '';
+	public $from_email = '';
 
 	##
 	# [$from_name] Email from name
 	##
-	var $from_name = '';
+	public $from_name = '';
 
 	##
 	# [$to] Email to
 	##
-	var $to = '';
+	public $to = '';
 
 	##
 	# [$subject] Email subject
 	##
-	var $subject = '';
+	public $subject = '';
 
 	##
 	# [$body] Email body
 	##
-	var $body = '';
+	public $body = '';
 
 	##
 	# [$headers] Email headers. Usually you don't need to set this field manually
 	##
-	var $headers = array();
+	public $headers = array();
 
 	##
 	# [$attachments] Email attachments
 	##
-	var $attachments = array();
+	public $attachments = array();
 
 	##
 	# [$charset] Email charset. **utf-8** is used by default.
 	##
-	var $charset = 'UTF-8';
+	public $charset = 'UTF-8';
 
 	##
 	# [$embed_images]
 	##
-	var $embed_images = false;
+	public $embed_images = false;
 
 	##
-	# = string send()
+	# = public string send()
 	# Send email. Returns empty string for success, or error string if error occurred
 	##
-	function send()
+	public function send()
 	{
 		$email = clone($this);
 
@@ -107,17 +107,17 @@ class SEmail
 		$email->from_name = $this->santize_string($email->from_name);
 		$email->subject = $this->santize_string($email->subject);
 
-		if ($email->embed_images) $this->prepare_images($email);
+		if ($email->embed_images) $email->prepare_images();
 
-		return $this->send_raw($email);
+		return $email->send_raw();
 	}
 
-	function santize_string($str)
+	protected function santize_string($str)
 	{
 		return str_replace("\n", '', str_replace("\r", '', trim($str)));
 	}
 
-	function generate_boundary($str='')
+	protected function generate_boundary($str='')
 	{
 		do {
 			$boundary = ('----------'.strtoupper(substr(md5(get_microtime()), 0, 15)));
@@ -126,19 +126,19 @@ class SEmail
 		return $boundary;
 	}
 
-	function generate_content_id_prefix()
+	protected function generate_content_id_prefix()
 	{
 		$cid = strtoupper(md5(get_microtime()));
 		$cid = substr($cid, 0, 8).'.'.substr($cid, 8, 8).'.'.substr($cid, 16, 8).'.'.substr($cid, 24, 8);
 		return $cid;
 	}
 
-	function prepare_images(&$email)
+	protected function prepare_images()
 	{
 		$chk = strtolower(conf('domain'));
 		$root = strtolower(conf('http.root'));
 
-		preg_match_all("@<\s*img[^>]*src=['\"]([^'\">]*)['\"][^>]*>@i", $email->body, $matches, PREG_SET_ORDER);
+		preg_match_all("@<\s*img[^>]*src=['\"]([^'\">]*)['\"][^>]*>@i", $this->body, $matches, PREG_SET_ORDER);
 		$imgs = array();
 
 		foreach ($matches as $m)
@@ -187,7 +187,7 @@ class SEmail
 			$cid = $cid_pref.'_'.$cnt;
 			$cnt++;
 
-			$email->body = preg_replace("@(<\s*img[^>]*src=['\"])(".preg_quote($k,'@').")(['\"][^>]*>)@i", '${1}cid:'.$cid.'${3}', $email->body);
+			$this->body = preg_replace("@(<\s*img[^>]*src=['\"])(".preg_quote($k,'@').")(['\"][^>]*>)@i", '${1}cid:'.$cid.'${3}', $this->body);
 			$ext = substr($v['n'], strrpos($v['n'], '.') + 1);
 
 			$att = new SEmailAttachment();
@@ -196,11 +196,11 @@ class SEmail
 			$att->content_name = $v['n'];
 			$att->content_id = $cid;
 
-			$email->attachments[] = $att;
+			$this->attachments[] = $att;
 		}
 	}
 
-	function get_smtp_response($sock)
+	protected function get_smtp_response($sock)
 	{
 		$res = '';
 
@@ -219,19 +219,19 @@ class SEmail
 		return $res;
 	}
 
-	function get_smtp_response_code($sock)
+	protected function get_smtp_response_code($sock)
 	{
 		$resp = $this->get_smtp_response($sock);
 		return substr($resp, 0, 3);
 	}
 
-	function smtp_puts($sock, $data)
+	protected function smtp_puts($sock, $data)
 	{
 		if (DEBUG) dwrite_msg('SMTP request', $data);
 		fputs($sock, $data);
 	}
 
-	function send_smtp_data($sock, $data, $is_headers)
+	protected function send_smtp_data($sock, $data, $is_headers)
 	{
 		$arr = explode("\n", str_replace("\r", "\n", str_replace("\r\n","\n",$data)));
 
@@ -260,7 +260,7 @@ class SEmail
 		}
 	}
 
-	function send_mail_smtp($from_email, $from, $to, $subject, $hdr, $body)
+	protected function send_mail_smtp($from_email, $from, $to, $subject, $hdr, $body)
 	{
 		$host = (conf_get('mail.smtp.ssl') ? 'ssl://' : '') . conf_get('mail.smtp.host');
 		$sock = fsockopen($host, conf_get('mail.smtp.port'), $errno, $errstr, conf_get('mail.smtp.timeout'));
@@ -359,7 +359,7 @@ class SEmail
 		return '';
 	}
 
-	function send_mail_mail($from, $to, $subject, $hdr, $body)
+	protected function send_mail_mail($from, $to, $subject, $hdr, $body)
 	{
 		if (strtoupper(substr(PHP_OS, 0, 3) == 'WIN'))
 		{
@@ -382,7 +382,7 @@ class SEmail
 		return ($res ? '' : 'MAIL: sending failed');
 	}
 
-	function send_mail_sendmail($from, $to, $subject, $hdr, $body)
+	protected function send_mail_sendmail($from, $to, $subject, $hdr, $body)
 	{
 		$cmd = escapeshellcmd(conf('mail.sendmail.path')) . ' -t -i -f ' . escapeshellarg($from);
 		// $cmd = escapeshellcmd(conf('mail.sendmail.path')) . ' -t -i';
@@ -411,45 +411,45 @@ class SEmail
 		return '';
 	}
 
-	function make_from(&$email)
+	protected function make_from()
 	{
-		return (strlen($email->from_name) ? ($email->from_name . ' <' . $email->from_email . '>') : $email->from_email);
+		return (strlen($this->from_name) ? ($this->from_name . ' <' . $this->from_email . '>') : $this->from_email);
 	}
 
-	function validate_email($email_str)
+	protected function validate_email($email_str)
 	{
 		return preg_match("/^[-+\\.0-9=a-z_]+@([-0-9a-z]+\\.)+([0-9a-z]){2,4}$/i", $email_str);
 	}
 
-	function send_raw(&$email)
+	protected function send_raw()
 	{
-		if (!$this->validate_email($email->from_email)) return 'Invalid "From" email';
-		if (!$this->validate_email($email->to)) return 'Invalid "To" email';
+		if (!$this->validate_email($this->from_email)) return 'Invalid "From" email';
+		if (!$this->validate_email($this->to)) return 'Invalid "To" email';
 
-		$from = $this->make_from($email);
+		$from = $this->make_from();
 
 		$hdr  = 'From: ' . $from . "\r\n";
-		$hdr .= 'Return-Path: ' . $email->from_email . "\r\n";
-		$hdr .= 'Errors-To: ' . $email->from_email . "\r\n";
+		$hdr .= 'Return-Path: ' . $this->from_email . "\r\n";
+		$hdr .= 'Errors-To: ' . $this->from_email . "\r\n";
 		$hdr .= "MIME-Version: 1.0\r\n";
 
-		foreach ($email->headers as $key=>$val) $hdr .= $this->santize_string($key) . ': ' . $this->santize_string($val) . "\r\n";
+		foreach ($this->headers as $key=>$val) $hdr .= $this->santize_string($key) . ': ' . $this->santize_string($val) . "\r\n";
 
-		if (!count($email->attachments))
+		if (!count($this->attachments))
 		{
-			$hdr .= 'Content-Type: text/html; charset=' . $email->charset . "\r\n";
-			$body = $email->body;
+			$hdr .= 'Content-Type: text/html; charset=' . $this->charset . "\r\n";
+			$body = $this->body;
 		}
 		else
 		{
-			$str = $email->body;
-			foreach ($email->attachments as $att) $str .= $att->content;
+			$str = $this->body;
+			foreach ($this->attachments as $att) $str .= $att->content;
 			$boundary = $this->generate_boundary($str);
 
 			$hdr .= 'Content-Type: multipart/mixed; boundary="' . $boundary.'"' . "\r\n";
 			$attachs = '';
 
-			foreach ($email->attachments as $att)
+			foreach ($this->attachments as $att)
 			{
 				if (strpos($att->mime_type, '/') === false) error('Invalid MIME type of the attachment.');
 
@@ -465,15 +465,15 @@ class SEmail
 			}
 
 			$body = "--$boundary\r\n";
-			$body .= "Content-type: text/html; charset=" . $email->charset . "\r\n\r\n";
-			$body .= $email->body . "\r\n" . $attachs;
+			$body .= "Content-type: text/html; charset=" . $this->charset . "\r\n\r\n";
+			$body .= $this->body . "\r\n" . $attachs;
 			$body .= "--$boundary--\r\n";
 		}
 
 		if (DEBUG)
 		{
-			$msg = '<b>SendMail to "' . $email->to  .'" with subject "' . $email->subject . '"</b>';
-			if (!conf('mail.send')) $msg .= ' <span style="color:red;">(Sending email is disabled)</span>';
+			$msg = "**SendMail to \"{$this->to}\" with subject \"{$this->subject}\"**";
+			if (!conf('mail.send')) $msg .= ' !!(Sending email is disabled)!!';
 
 			dwrite($msg);
 			dwrite_msg('Headers', $hdr);
@@ -485,13 +485,13 @@ class SEmail
 			switch (conf('mail.type'))
 			{
 				case 'mail':
-					return $this->send_mail_mail($from, $email->to, $email->subject, $hdr, $body);
+					return $this->send_mail_mail($from, $this->to, $this->subject, $hdr, $body);
 
 				case 'smtp':
-					return $this->send_mail_smtp($email->from_email, $from, $email->to, $email->subject, $hdr, $body);
+					return $this->send_mail_smtp($this->from_email, $from, $this->to, $this->subject, $hdr, $body);
 
 				case 'sendmail':
-					return $this->send_mail_sendmail($from, $email->to, $email->subject, $hdr, $body);
+					return $this->send_mail_sendmail($from, $this->to, $this->subject, $hdr, $body);
 
 				default:
 					error('Unknown mailer type (' . conf('mail.type') . ')');

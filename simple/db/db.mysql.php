@@ -15,12 +15,7 @@
 ##
 class SDBMySql extends SDBBase
 {
-	var $conn = null;
-
-	function SDBMySql($conf)
-	{
-		$this->__construct($conf);
-	}
+	protected $conn = null;
 
 	function __construct($conf)
 	{
@@ -29,45 +24,65 @@ class SDBMySql extends SDBBase
 		$this->set_prefix($conf->get('prefix'));
 	}
 
-	function set_database($name)
+	public function set_database($name)
 	{
 		$this->database = $name;
 		if ($name != '') mysql_select_db($name, $this->conn) or error(mysql_error());
 	}
 
-	function i_run_query($sql, $is_exec)
+	protected function do_set_limit($sql, $limit)
+	{
+		if (count($limit) == 1) return ($sql . ' LIMIT ' . intval($limit[0]));
+		elseif (count($limit) == 2) return ($sql . ' LIMIT ' . intval($limit[0]) . ',' . intval($limit[1]));
+
+		return $sql;
+	}
+
+	protected function run_query($sql, $type)
 	{
 		$res = array();
 		$res['result'] = @mysql_query($sql, $this->conn);
 		$res['error'] = ($res['result'] ? '' : mysql_error($this->conn));
 
-		if ($is_exec) {
-			$res['affected'] = ($res['result'] ? mysql_affected_rows($this->conn) : 0);
-		} else {
+		if ($type == SDBBase::Select) {
 			$res['selected'] = ($res['result'] ? mysql_num_rows($res['result']) : 0);
+		} else {
+			$res['affected'] = ($res['result'] ? mysql_affected_rows($this->conn) : 0);
 		}
 
 		return $res;
 	}
 
-	function quote($str)
+	public function quote($str)
 	{
 		return "'".(function_exists('mysql_real_escape_string') ? mysql_real_escape_string($str, $this->conn) : mysql_escape_string($str))."'";
 	}
 
-	function i_quote_names($name)
+	public function quote_names($name)
 	{
-		return '`'.(function_exists('mysql_real_escape_string') ? mysql_real_escape_string($name, $this->conn) : mysql_escape_string($name)).'`';
+		return '`'.preg_replace("/[^A-Za-z0-9_\-\. ]/", '', $name).'`';
 	}
 
-	function execute(&$cmd)
+	public function execute($cmd)
 	{
-		$res = $this->i_query($cmd, true);
+		$res = $this->query($cmd, SDBBase::Execute);
+		if ($res === false) return;
 
+		if ($res !== true)
+		{
+			if (DEBUG_ENABLE) dwrite("**\"{$cmd->command}\"** is not a non-query", S_ERROR);
+			mysql_free_result($res);
+		}
+	}
+
+	public function insert($cmd)
+	{
+		$res = $this->query($cmd, SDBBase::Insert);
 		if ($res === false) return 0;
 
-		if ($res !== true) {
-			if (DEBUG_ENABLE) dwrite("'".htmlspecialchars($cmd->command)."' is not a non-query", S_ERROR);
+		if ($res !== true)
+		{
+			if (DEBUG_ENABLE) dwrite("**\"{$cmd->command}\"** is not a non-query", S_ERROR);
 			mysql_free_result($res);
 			return 0;
 		}
@@ -75,14 +90,13 @@ class SDBMySql extends SDBBase
 		return mysql_insert_id($this->conn);
 	}
 
-	function get_all(&$cmd)
+	public function get_all($cmd)
 	{
-		$res = $this->i_query($cmd);
-
+		$res = $this->query($cmd);
 		if ($res === false) return array();
 
 		if ($res === true) {
-			if (DEBUG) dwrite("'".htmlspecialchars($cmd->command)."' is not a SELECT query", S_ERROR);
+			if (DEBUG) dwrite("**\"{$cmd->command}\"** is not a SELECT query", S_ERROR);
 			return array();
 		}
 
@@ -92,14 +106,13 @@ class SDBMySql extends SDBBase
 		return $arr;
 	}
 
-	function get_row(&$cmd)
+	public function get_row($cmd)
 	{
-		$res = $this->i_query($cmd);
-
+		$res = $this->query($cmd);
 		if ($res === false) return null;
 
 		if ($res === true) {
-			if (DEBUG) dwrite("'".htmlspecialchars($cmd->command)."' is not a SELECT query", S_ERROR);
+			if (DEBUG) dwrite("**\"{$cmd->command}\"** is not a SELECT query", S_ERROR);
 			return null;
 		}
 
@@ -108,14 +121,13 @@ class SDBMySql extends SDBBase
 		return $row;
 	}
 
-	function get_one(&$cmd)
+	public function get_one($cmd)
 	{
-		$res = $this->i_query($cmd);
-
+		$res = $this->query($cmd);
 		if ($res === false) return null;
 
 		if ($res === true) {
-			if (DEBUG) dwrite("'".htmlspecialchars($cmd->command)."' is not a SELECT query", S_ERROR);
+			if (DEBUG) dwrite("**\"{$cmd->command}\"** is not a SELECT query", S_ERROR);
 			return array();
 		}
 
@@ -126,10 +138,10 @@ class SDBMySql extends SDBBase
 		return $fld;
 	}
 
-	function i_get_tables_list()
+	protected function do_get_tables_list()
 	{
-		$cmd =& new SDBCommand("SHOW TABLES FROM @dbname");
-		$cmd->add('@dbname', DB_TableName, conf('db.name'));
+		$cmd = new SDBCommand("SHOW TABLES FROM @dbname");
+		$cmd->set('dbname', conf('db.name'), DB_TableName);
 		$res = $this->get_all($cmd);
 
 		$arr = array();
@@ -144,10 +156,10 @@ class SDBMySql extends SDBBase
 		return $arr;
 	}
 
-	function i_get_table_columns($table)
+	protected function do_get_table_columns($table)
 	{
-		$cmd =& new SDBCommand("SHOW COLUMNS FROM @tbname");
-		$cmd->add('@tbname', DB_TableName, $table);
+		$cmd = new SDBCommand("SHOW COLUMNS FROM @tbname");
+		$cmd->set('tbname', $table, DB_TableName);
 		$res = $this->get_all($cmd);
 
 		$fields = array();
@@ -184,9 +196,9 @@ class SDBMySql extends SDBBase
 				case 'double'     : $tp = DB_Float;    break;
 				case 'decimal'    : $tp = DB_Float;    break;
 				case 'datetime'   : $tp = DB_DateTime; break;
-				case 'timestamp'  : error('SDBMySql.get_table_columns : TODO: check mysql manual for \'timestamp\''); break;
-				case 'time'       : error('SDBMySql.get_table_columns : TODO: check mysql manual for \'time\''); break;
-				case 'year'       : error('SDBMySql.get_table_columns : TODO: check mysql manual for \'year\''); break;
+				case 'timestamp'  : error('SDBMySql.get_table_columns : TODO: check mysql manual for "timestamp"'); break;
+				case 'time'       : error('SDBMySql.get_table_columns : TODO: check mysql manual for "time"'); break;
+				case 'year'       : error('SDBMySql.get_table_columns : TODO: check mysql manual for "year"'); break;
 				case 'char'       : $tp = DB_String;   break;
 				case 'tinyblob'   : $tp = DB_Blob;     break;
 				case 'tinytext'   : $tp = DB_Blob;     break;
@@ -195,9 +207,9 @@ class SDBMySql extends SDBBase
 				case 'mediumtext' : $tp = DB_Blob;     break;
 				case 'longblob'   : $tp = DB_Blob;     break;
 				case 'longtext'   : $tp = DB_Blob;     break;
-				case 'enum'       : error('SDBMySql.get_table_columns : unsupported type \'enum\''); break;
-				case 'set'        : error('SDBMySql.get_table_columns : TODO: check mysql manual for \'set\''); break;
-				default           : error('SDBMySql.get_table_columns : unknown field type \''.$typename.'\'');
+				case 'enum'       : error('SDBMySql.get_table_columns : unsupported type "enum"'); break;
+				case 'set'        : error('SDBMySql.get_table_columns : TODO: check mysql manual for "set"'); break;
+				default           : error('SDBMySql.get_table_columns : unknown field type "'.$typename.'"');
 			}
 
 			$fields[$row['Field']] = array('t' => $tp, 's' => $size);

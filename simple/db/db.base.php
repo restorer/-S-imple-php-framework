@@ -63,181 +63,273 @@ abstract class SDBBase
 	}
 
 	##
-	# = string parse(SDBCommand &$cmd)
-	# [$cmd] Command to parse
+	# = protected abstract string do_set_limit($sql, $limit)
+	##
+	protected abstract function do_set_limit($sql, $limit);
+
+	##
+	# = void prepare(SDBCommand &$cmd)
+	##
+	protected function prepare($cmd)
+	{
+		$sql = $cmd->command;
+		if ($cmd->_prepared_command!=null && $cmd->_prepared_command[0]==$sql) return;
+
+		$res = array();
+		$len = strlen($sql);
+		$buf = '';
+
+		for ($pos = 0; $pos < $len;)
+		{
+			$ch = $sql{$pos};
+			$pos++;
+
+			if ($ch == '@')
+			{
+				if ($pos >= $len) throw new Exception("Can't parse sql command: \"$sql\"");
+
+				if (strlen($buf))
+				{
+					$res[] = array('s', $buf);
+					$buf = '';
+				}
+
+				$name = $sql{$pos};
+				$pos++;
+
+				if ($name == '@')
+				{
+					$res[] = array('t');
+					continue;
+				}
+
+				for (;$pos < $len; $pos++)
+				{
+					$ch = $sql{$pos};
+					if (($ch<'a' || $ch>'z') && ($ch<'A' || $ch>'Z') && $ch!='_') break;
+
+					$name .= $ch;
+				}
+
+				$res[] = array('p', $name);
+			}
+			else
+			{
+				$buf .= $ch;
+			}
+		}
+
+		if (strlen($buf)) {
+			$res[] = array('s', $buf);
+		}
+
+		$cmd->_prepared_command = array($sql, $res);
+	}
+
+	##
+	# = string bind(SDBCommand &$cmd)
 	# **TODO:** More flexible limiting (i.e. MSSQL has no LIMIT command, but has SELECT TOP <num>)
 	##
-	function parse($cmd)
+	protected function bind($cmd)
+	{
+		$prep = $cmd->_prepared_command[1];
+		$params = array();
+		$sql = '';
+
+		foreach ($prep as $arr)
+		{
+			switch ($arr[0])
+			{
+				case 's':
+					$sql .= $arr[1];
+					break;
+
+				case 't':
+					$sql .= $this->prefix;
+					break;
+
+				case 'p':
+					$name = $arr[1];
+
+					if (!array_key_exists($name, $params))
+					{
+						if (!array_key_exists($name, $cmd->_params)) throw new Exception("Unknown parameter \"$name\"");
+						$params[$name] = $this->get_param_value($name, $cmd->_params[$name]);
+					}
+
+					$sql .= $params[$name];
+					break;
+			}
+		}
+
+		if ($cmd->_limit!=null && count($cmd->_limit)) {
+			$sql = $this->do_set_limit($sql, $cmd->_limit);
+		}
+
+		return $sql;
+	}
+
+	##
+	# = protected string get_param_value(string $name, array $parm)
+	##
+	protected function get_param_value($name, $parm)
+	{
+		if ($parm['c'] !== null) return $parm['c'];
+
+		$val = $parm['v'];
+		if ($val === null) return 'NULL';
+
+		switch ($parm['t'])
+		{
+			case SDB::String:
+				$val = strval($val);
+
+				if (strlen($val) > $parm['s']) {
+					if (DEBUG) dwrite("Parameter '$name' size more than ".$parm['s'], S_ERROR);
+					$val = substr($val, 0, $parm['s']);
+				}
+
+				$val = $this->quote($val);
+				break;
+
+			case SDB::LikeString:
+				$val = strval($val);
+
+				if (strlen($val) > $parm['s']) {
+					if (DEBUG) dwrite("Parameter '$name' size more than ".$parm['s'], S_ERROR);
+					$val = substr($val, 0, $parm['s']);
+				}
+
+				$val = $this->quote_like($val);
+				break;
+
+			case SDB::Int:
+				if (!is_numeric($val)) {
+					if (DEBUG) dwrite("Parameter '$name' is not SDB::Int", S_ERROR);
+				}
+
+				$val = $this->quote(intval($val));
+				break;
+
+			case SDB::Float:
+				if (!is_numeric($val)) {
+					if (DEBUG) dwrite("Parameter '$name' is not SDB::Float", S_ERROR);
+				}
+
+				$val = $this->quote(floatval($val));
+				break;
+
+			case SDB::Date:
+				$val = strval($val);
+
+				if (!preg_match("/^(\d{4})-(\d\d)-(\d{2})$/", $val)) {
+					if (DEBUG) dwrite("Parameter '$name' is not SDB::Date", S_ERROR);
+					$val = '0000-01-01';
+				}
+
+				$val = $this->quote($val);
+				break;
+
+			case SDB::DateTime:
+				$val = strval($val);
+
+				if (!preg_match("/^(\d{4})-(\d\d)-(\d{2})( (\d\d):(\d\d):(\d\d))?$/", $val)) {
+					if (DEBUG) dwrite("Parameter '$name' is not SDB::DateTime", S_ERROR);
+					$val = '0000-01-01 00:00:00';
+				}
+
+				$val = $this->quote($val);
+				break;
+
+			case SDB::Blob:
+				$val = $this->quote(strval($val));
+				break;
+
+			case SDB::StringsList:
+				$ar = $val;
+
+				if (!is_array($ar)) {
+					$ar = array();
+					if (DEBUG) dwrite("Parameter '$name' is not SDB::StringsList (not an array)", S_ERROR);
+				}
+
+				foreach ($ar as &$vl)
+				{
+					$vl = strval($vl);
+
+					if (strlen($vl) > $parm['s']) {
+						if (DEBUG) dwrite("Some elements in parameter '$name' has size more than ".$parm['s'], S_ERROR);
+						$vl = substr($vl, 0, $parm['s']);
+					}
+
+					$vl = $this->quote($vl);
+				}
+
+				$val = join(',', $ar);
+				break;
+
+			case SDB::IntsList:
+				$ar = $val;
+
+				if (!is_array($ar)) {
+					$ar = array();
+					if (DEBUG) dwrite("Parameter '$name' is not SDB::IntsList (not an array)", S_ERROR);
+				}
+
+				foreach ($ar as &$vl)
+				{
+					if (!is_numeric($vl)) {
+						if (DEBUG) dwrite("Some elements in parameter '$name' are not SDB::Int", S_ERROR);
+					}
+
+					$vl = $this->quote(intval($vl));
+				}
+
+				$val = join(',', $ar);
+				break;
+
+			case SDB::TableName:
+				$val = strval($val);
+
+				if (strlen($val) > $parm['s']) {
+					if (DEBUG) dwrite("Parameter '$name' size more than ".$parm['s'], S_ERROR);
+					$val = substr($val, 0, $parm['s']);
+				}
+
+				$val = $this->quote_table($val);
+				break;
+
+			case SDB::FieldName:
+				$val = strval($val);
+
+				if (strlen($val) > $parm['s']) {
+					if (DEBUG) dwrite("Parameter '$name' size more than ".$parm['s'], S_ERROR);
+					$val = substr($val, 0, $parm['s']);
+				}
+
+				$val = $this->quote_field($val);
+				break;
+
+			default:
+				throw new Exception("Data type '".$parm['t']."' not recognized");
+		}
+
+		$parm['c'] = $val;
+		return $val;
+	}
+
+	##
+	# = string parse(SDBCommand &$cmd)
+	# [$cmd] Command to parse
+	##
+	protected function parse($cmd)
 	{
 		global $s_runconf;
-		$arr = array();
 
 		if (DEBUG) { $st = get_microtime(); }
 
-		foreach ($cmd->_params as $k=>$parm)
-		{
-			$val = $parm['v'];
-
-			if ($val === null) {
-				$arr[$k] = 'NULL';
-				continue;
-			}
-
-			switch ($parm['t'])
-			{
-				case SDB::String:
-					$val = strval($val);
-
-					if (strlen($val) > $parm['s']) {
-						if (DEBUG) dwrite("Parameter '$k' size more than ".$parm['s'], S_ERROR);
-						$val = substr($val, 0, $parm['s']);
-					}
-
-					$val = $this->quote($val);
-					break;
-
-				case SDB::LikeString:
-					$val = strval($val);
-
-					if (strlen($val) > $parm['s']) {
-						if (DEBUG) dwrite("Parameter '$k' size more than ".$parm['s'], S_ERROR);
-						$val = substr($val, 0, $parm['s']);
-					}
-
-					$val = $this->quote_like($val);
-					break;
-
-				case SDB::Int:
-					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not SDB::Int", S_ERROR);}
-					$val = intval($val);
-					$val = $this->quote($val);
-					break;
-
-				case SDB::Float:
-					if (!is_numeric($val)) {if (DEBUG) dwrite("Parameter '$k' is not SDB::Float", S_ERROR);}
-					$val = floatval($val);
-					$val = $this->quote($val);
-					break;
-
-				case SDB::Date:
-					$val = strval($val);
-
-					if (!preg_match("/^(\d{4})-(\d\d)-(\d{2})$/", $val)) {
-						if (DEBUG) dwrite("Parameter '$k' is not SDB::Date", S_ERROR);
-						$val = '0000-01-01';
-					}
-
-					$val = $this->quote($val);
-					break;
-
-				case SDB::DateTime:
-					$val = strval($val);
-
-					if (!preg_match("/^(\d{4})-(\d\d)-(\d{2})( (\d\d):(\d\d):(\d\d))?$/", $val)) {
-						if (DEBUG) dwrite("Parameter '$k' is not SDB::DateTime", S_ERROR);
-						$val = '0000-01-01 00:00:00';
-					}
-
-					$val = $this->quote($val);
-					break;
-
-				case SDB::Blob:
-					$val = strval($val);
-					$val = $this->quote($val);
-					break;
-
-				case SDB::StringsList:
-					$ar = $val;
-
-					if (!is_array($ar)) {
-						$ar = array();
-						if (DEBUG) dwrite("Parameter '$k' is not Int_StringsList (not an array)", S_ERROR);
-					}
-
-					$val = '';
-
-					foreach ($ar as $vl)
-					{
-						$rv = strval($vl);
-
-						if (strlen($rv) > $parm['s']) {
-							if (DEBUG) dwrite("Some elements in parameter '$k' has size more than ".$parm['s'], S_ERROR);
-							$rv = substr($rv, 0, $parm['s']);
-						}
-
-						$val .= ($val==''?'':',') . $this->quote($rv);
-					}
-					break;
-
-				case SDB::IntsList:
-					$ar = $val;
-
-					if (!is_array($ar)) {
-						$ar = array();
-						if (DEBUG) dwrite("Parameter '$k' is not SDB::IntsList (not an array)", S_ERROR);
-					}
-
-					$val = '';
-
-					foreach ($ar as $vl)
-					{
-						if (!is_numeric($vl)) { if (DEBUG) dwrite("Some elements in parameter '$k' are not SDB::Int", S_ERROR); }
-						$rv = intval($vl);
-						$val .= ($val==''?'':',') . $this->quote($rv);
-					}
-					break;
-
-				case SDB::TableName:
-					$val = strval($val);
-
-					if (strlen($val) > $parm['s']) {
-						if (DEBUG) dwrite("Parameter '$k' size more than ".$parm['s'], S_ERROR);
-						$val = substr($val, 0, $parm['s']);
-					}
-
-					$val = $this->quote_table($val);
-					break;
-
-				case SDB::FieldName:
-					$val = strval($val);
-
-					if (strlen($val) > $parm['s']) {
-						if (DEBUG) dwrite("Parameter '$k' size more than ".$parm['s'], S_ERROR);
-						$val = substr($val, 0, $parm['s']);
-					}
-
-					$val = $this->quote_field($val);
-					break;
-
-				default: error("Data type '".$parm['t']."' not recognized");
-			}
-
-			$arr[$k] = $val;
-		}
-
-		$sql = $cmd->command;
-		$sql = str_replace('@@', $this->prefix, $sql);
-
-		$l = strlen($sql);
-		$str = '';
-		$res = '';
-
-		for ($i = 0; $i < $l; $i++)
-		{
-			$ch = $sql{$i};
-
-			if (($ch>='0'&&$ch<='9')||($ch>='a'&&$ch<='z')||($ch>='A'&&$ch<='Z')||$ch=='_'||$ch=='@') {
-				$str .= $ch;
-			} elseif ($str != '') {
-				$res .= (array_key_exists($str, $arr) ? $arr[$str] : $str) . $ch;
-				$str = '';
-			} else $res .= $ch;
-		}
-
-		$res .= (array_key_exists($str, $arr) ? $arr[$str] : $str);
-
-		if (count($cmd->_limit) == 1) $res .= ' LIMIT '.intval($cmd->_limit[0]);
-		elseif (count($cmd->_limit) == 2) $res .= ' LIMIT '.intval($cmd->_limit[0]).','.intval($cmd->_limit[1]);
+		$this->prepare($cmd);
+		$res = $this->bind($cmd);
 
 		if (DEBUG)
 		{
@@ -249,22 +341,22 @@ abstract class SDBBase
 	}
 
 	##
-	# = public abstract array run_query(string $sql, mixed $type)
+	# = protected abstract array run_query(string $sql, mixed $type)
 	# [$sql] SQL query to execute
 	# [$type] Command type (SDBBase::Select, SDBBase::Insert or SDBBase::Execute)
 	# {$result['result']} Command result (resource or class, depending on db driver)
 	# {$result['error']} Empty string - no errors
-	# {$result['affected']} Number of affected rows (for exec queries)
-	# {$result['selected']} Number of selected rows (for non-exec queries)
+	# {$result['selected']} Number of selected rows (for select queries)
+	# {$result['affected']} Number of affected rows (for non-select queries)
 	##
-	public abstract function run_query($sql, $type);
+	protected abstract function run_query($sql, $type);
 
 	##
-	# = public mixed query(SDBCommand &$cmd, mixed $is_exec=false)
+	# = protected mixed query(SDBCommand &$cmd, mixed $is_exec=false)
 	# [$cmd] Command to execute
 	# [$type] Command type (SDBBase::Select, SDBBase::Insert or SDBBase::Execute)
 	##
-	public function query($cmd, $type=SDBBase::Select)
+	protected function query($cmd, $type=SDBBase::Select)
 	{
 		global $s_runconf;
 		$sql = $this->parse($cmd);
@@ -277,14 +369,14 @@ abstract class SDBBase
 
 			if ($res['error'])
 			{
-				dwrite("<b>Failed [</b>".htmlspecialchars($sql)."<b>] ".$res['error']."</b>", S_ERROR);
+				dwrite("**Failed [** $sql **] {$res['error']}**", S_ERROR);
 			}
 			else
 			{
 				$dt = $t2 - $t1;
 				$s_runconf->set('time.sql.query', $s_runconf->get('time.sql.query') + $dt);
-				$rows_str = ($is_exec ? $res['affected'].' rows affected' : $res['selected'].' rows selected');
-				dwrite("<b>Success [</b>".htmlspecialchars($sql)."<b>] $rows_str</b> (".number_format($dt, 8).")", ($dt<0.1 ? S_SUCCESS : S_ACCENT));
+				$rows_str = ($type!=SDBBase::Select ? $res['affected'].' rows affected' : $res['selected'].' rows selected');
+				dwrite("**Success [** $sql **] {$rows_str}** (".number_format($dt, 8).")", ($dt<0.1 ? S_SUCCESS : S_ACCENT));
 			}
 		}
 		else { $res = $this->run_query($sql, $type); }
@@ -335,10 +427,16 @@ abstract class SDBBase
 	}
 
 	##
-	# = public abstract int execute(SDBCommand &$cmd)
-	# Execute non-select command. Returns last insert id
+	# = public abstract void execute(SDBCommand &$cmd)
+	# Execute non-select command.
 	##
 	public abstract function execute($cmd);
+
+	##
+	# = public abstract int insert(SDBCommand &$cmd)
+	# Execute insert command. Returns last insert id
+	##
+	public abstract function insert($cmd);
 
 	##
 	# = public abstract array get_all(SDBCommand &$cmd)
@@ -385,10 +483,10 @@ abstract class SDBBase
 	}
 
 	##
-	# = public abstract array get_tables_list()
+	# = protected abstract array do_get_tables_list()
 	# Must return array of table names
 	##
-	public abstract function do_get_tables_list();
+	protected abstract function do_get_tables_list();
 
 	##
 	# = public array get_tables_list()
@@ -401,13 +499,13 @@ abstract class SDBBase
 	}
 
 	##
-	# = public abstract array get_table_columns(string $table)
+	# = protected abstract array do_get_table_columns(string $table)
 	# Must return assoc array of table fields.
 	# **$key** - field name
 	# **$result[$key]['t']** - field type
 	# **$result[$key]['s']** - field size
 	##
-	public function abstract do_get_table_columns();
+	protected abstract function do_get_table_columns($table);
 
 	##
 	# = public array get_table_columns(string $table)

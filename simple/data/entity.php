@@ -15,7 +15,6 @@
 class SEntity
 {
 	private $_id = null;
-	protected $_methods = null;
 
 	##
 	# = protected mixed _get_id()
@@ -33,55 +32,41 @@ class SEntity
 	protected function _set_id($value)
 	{
 		if ($this->_id === null) {
-			$this->_id = $id;
+			$this->_id = $value;
 		} else {
 			throw new Exception("Id can be changed only once");
 		}
 	}
 
 	##
-	# = protected bool _has_method(string $name)
-	##
-	protected function _has_method($name)
-	{
-		if ($this->_methods === null)
-		{
-			$arr = get_class_methods($this);
-			$this->_methods = array();
-
-			for ($i = 0; $i < count($arr); $i++) {
-				$_methods[$arr[$i]] = true;
-			}
-		}
-
-		return array_key_exists($name, $this->_methods);
-	}
-
-	##
 	# = public void __set(string $name, mixed $value)
-	# Tries to call magic methods "_set_$name"
+	# Tries to call magic methods "_set_$name" or _set_($name, $value)
 	# | protected function _set_id($value)
 	##
 	public function __set($name, $value)
 	{
-		if ($this->_has_method("_set_$name")) {
+		if (method_exists($this, "_set_$name")) {
 			call_user_func(array($this, "_set_$name"), $value);
+		} elseif (method_exists($this, '_set_')) {
+			call_user_func(array($this, '_set_'), $name, $value);
 		} else {
-			throw new Exception("Property $name and method _set_$name() not found");
+			throw new Exception("Property $name, methods _set_$name() and _set_ not found");
 		}
 	}
 
 	##
 	# = public mixed __get(string $name)
-	# Tries to call magic methods "_get_$name"
+	# Tries to call magic methods "_get_$name" or _get_($name)
 	# | protected function _get_id()
 	##
 	public function __get($name)
 	{
-		if ($this->_has_method("_get_$name")) {
+		if (method_exists($this, "_get_$name")) {
 			return call_user_func(array($this, "_get_$name"));
+		} elseif (method_exists($this, '_get_')) {
+			return call_user_func(array($this, '_get_'), $name);
 		} else {
-			throw new Exception("Property $name and method _get_$name() not found");
+			throw new Exception("Property $name, methods _get_$name() and _get_ not found");
 		}
 	}
 }

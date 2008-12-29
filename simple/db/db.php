@@ -9,8 +9,6 @@
  */
 
 require_once(S_BASE . 'db/db.base.php');
-require_once(S_BASE . 'db/db.mysql.php');
-require_once(S_BASE . 'db/db.sqlite.php');
 
 ##
 # .begin
@@ -56,8 +54,16 @@ class SDB
 
 		switch ($type)
 		{
-			case 'mysql': $db = new SDBMySql($conf); break;
-			case 'sqlite': $db = new SDBSQLite($conf); break;
+			case 'mysql':
+				require_once(S_BASE . 'db/db.mysql.php');
+				$db = new SDBMySql($conf);
+				break;
+
+			case 'sqlite':
+				require_once(S_BASE . 'db/db.sqlite.php');
+				$db = new SDBSQLite($conf);
+				break;
+
 			default: error("DataBase type '$type' not recognized");
 		}
 
@@ -70,7 +76,7 @@ class SDB
 	# Wrapper to db driver
 	##
 	public static function escape($str) {
-		$db =& SDB::get_current();
+		$db = SDB::get_current();
 		return $db->escape($str);
 	}
 
@@ -79,7 +85,7 @@ class SDB
 	# Wrapper to db driver
 	##
 	public static function like_escape($str) {
-		$db =& SDB::get_current();
+		$db = SDB::get_current();
 		return $db->like_escape($str);
 	}
 
@@ -88,7 +94,7 @@ class SDB
 	# Wrapper to db driver
 	##
 	public static function create_count_cmd($cmd) {
-		$db =& SDB::get_current();
+		$db = SDB::get_current();
 		return $db->create_count_cmd($cmd);
 	}
 
@@ -97,7 +103,7 @@ class SDB
 	# Wrapper to db driver
 	##
 	public static function get_tables_list() {
-		$db =& SDB::get_current();
+		$db = SDB::get_current();
 		return $db->get_tables_list();
 	}
 
@@ -106,7 +112,7 @@ class SDB
 	# Wrapper to db driver
 	##
 	public static function get_table_columns($table) {
-		$db =& SDB::get_current();
+		$db = SDB::get_current();
 		return $db->get_table_columns($table);
 	}
 
@@ -115,7 +121,7 @@ class SDB
 	# Wrapper to db driver
 	##
 	public static function reset_cached_data() {
-		$db =& SDB::get_current();
+		$db = SDB::get_current();
 		return $db->reset_cached_data();
 	}
 }
@@ -130,16 +136,14 @@ class SDB
 class SDBCommand
 {
 	protected $db = null;
+	public $_prepared_command = null;
+	public $_params = array();
+	public $_limit = array();
 
 	##
 	# [$command] SQL query
 	##
 	public $command = '';
-
-	public $_prepared_command = null;
-
-	public $_params = array();
-	public $_limit = array();
 
 	##
 	# = public void __construct(string $command='', SDBBase $db=null)
@@ -151,35 +155,38 @@ class SDBCommand
 	}
 
 	##
-	# = public void set(string $name, mixed $value)
-	# Set existing command parameter
+	# = public void set(string $name, int $type=0, mixed $value=null, int $size=255)
+	# Set existing or add new command parameter
 	##
-	public function set($name, $value)
+	public function set($name, $value=null, $type=0, $size=0)
 	{
-		if (!array_key_exists($name, $this->_params)) error("Parameter '$name' not found");
-		$this->_params[$name]['v'] = $value;
+		if (array_key_exists($name, $this->_params))
+		{
+			$this->_params[$name]['v'] = $value;
+			$this->_params[$name]['c'] = null;
+
+			if ($type != 0) $this->_params[$name]['t'] = $type;
+			if ($size != 0) $this->_params[$name]['s'] = $size;
+		}
+		else
+		{
+			if ($type == 0) {
+				throw new Exception("Parameter type not set");
+			}
+
+			$this->_params[$name] = array(
+				't' => $type,
+				's' => ($size==0 ? 255 : $size),
+				'v' => $value,
+				'c' => null
+			);
+		}
 	}
 
 	##
-	# = public void add(string $name, int $type=0, mixed $value=null, int $size=255)
-	# Add new command parameter
+	# = public void limit(int $from_or_count, int $count=null)
 	##
-	public function add($name, $type=0, $value=null, $size=255)
-	{
-		if (array_key_exists($name, $this->_params)) error("Parameter '$name' already added");
-
-		$pr = array();
-		$pr['t'] = $type;
-		$pr['s'] = $size;
-		$pr['v'] = $value;
-
-		$this->_params[$name] = $pr;
-	}
-
-	##
-	# = public void set_limit(int $from_or_count, int $count=null)
-	##
-	public function set_limit($from_or_count, $count=null) {
+	public function limit($from_or_count, $count=null) {
 		$this->_limit = ($count!==null ? array($from_or_count, $count) : array($from_or_count));
 	}
 

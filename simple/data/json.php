@@ -5,34 +5,19 @@
  * 2007-2008 Zame Software Development (http://zame-dev.org)
  * All rights reserved
  *
- * Base entity class
+ * Json serializer
  */
 
 ##
 # .begin
-# = abstract class JsonBase
+# = interface JsonSerializable
 ##
-abstract class JsonBase
+interface JsonSerializable
 {
-	protected $value;
-
 	##
-	# = public mixed get()
+	# = string json_serialize()
 	##
-	public function get()
-	{
-		return $this->value;
-	}
-
-	##
-	# = public abstract void set(mixed $value)
-	##
-	public abstract function set($value);
-
-	##
-	# = public abstract string serialize()
-	##
-	public abstract function serialize();
+	function json_serialize();
 }
 ##
 # .end
@@ -40,206 +25,76 @@ abstract class JsonBase
 
 ##
 # .begin
-# = class JsonBool extends JsonBase
+# = static class Json
 ##
-class JsonBool extends JsonBase
+class Json
 {
-	##
-	# = public void __construct(bool $value = false)
-	##
-	public function __construct($value = false)
-	{
-		$this->set($value);
-	}
+	protected static $find = array('\\',   "'",  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
+	protected static $repl = array('\\\\', "\'", '\/', '\b', '\f', '\n', '\r', '\t', '\u');
 
 	##
-	# = public void set(bool $value)
+	# = public static string serialize(mixed $obj)
+	# Note: it use single quote in strings, not doudle quotes as usual.
 	##
-	public function set($value)
+	public static function serialize($obj)
 	{
-		$this->value = cast_bool($value);
-	}
-
-	##
-	# = public string serialize()
-	##
-	public function serialize()
-	{
-		return ($this->value ? 'true' : 'false');
-	}
-}
-##
-# .end
-##
-
-##
-# .begin
-# = class JsonString extends JsonBase
-##
-class JsonString extends JsonBase
-{
-	##
-	# = public void __construct(string $value = '')
-	##
-	public function __construct($value = '')
-	{
-		$this->set($value);
-	}
-
-	##
-	# = public void set(string $value)
-	##
-	public function set($value)
-	{
-		$this->value = strval($value);
-	}
-
-	##
-	# = public string serialize()
-	##
-	public function serialize()
-	{
-		$find = array('\\',   '"',  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
-		$repl = array('\\\\', '\"', '\/', '\b', '\f', '\n', '\r', '\t', '\u');
-		return '"' . str_replace($find, $repl, $this->value) . '"';
-	}
-}
-##
-# .end
-##
-
-##
-# .begin
-# = class JsonNumber extends JsonBase
-##
-class JsonNumber extends JsonBase
-{
-	##
-	# = public void __construct(float $value = 0)
-	##
-	public function __construct($value = 0)
-	{
-		$this->set($value);
-	}
-
-	##
-	# = public void set(float $value)
-	##
-	public function set($value)
-	{
-		$this->value = floatval($value);
-	}
-
-	##
-	# = public string serialize()
-	##
-	public function serialize()
-	{
-		return strval($this->value);
-	}
-}
-##
-# .end
-##
-
-##
-# .begin
-# = class JsonArray extends JsonBase
-##
-class JsonArray extends JsonBase
-{
-	##
-	# = public void __construct(array $value = array())
-	##
-	public function __construct($value = array())
-	{
-		$this->set($value);
-	}
-
-	##
-	# = public void set(array $value)
-	##
-	public function set($value)
-	{
-		if (is_array($value)) $this->value = $value;
-		else $this->value = array();
-	}
-
-	##
-	# = public void add(JsonBase $item)
-	##
-	public function add($item)
-	{
-		$this->value[] = $item;
-	}
-
-	##
-	# = public string serialize()
-	##
-	public function serialize()
-	{
-		$res = '';
-
-		foreach ($this->value as $val)
+		if (is_string($obj))
 		{
-			if ($res != '') $res .= ',';
-			$res .= $val->serialize();
+			return "'" . str_replace(self::$find, self::$repl, $obj) . "'";
 		}
-
-		return '[' . $res . ']';
-	}
-}
-##
-# .end
-##
-
-##
-# .begin
-# = class JsonObject extends JsonBase
-##
-class JsonObject extends JsonBase
-{
-	##
-	# = public void __construct(array $value = array())
-	##
-	public function __construct($value = array())
-	{
-		$this->set($value);
-	}
-
-	##
-	# = public void set(array $value)
-	##
-	public function set($value)
-	{
-		if (is_array($value)) $this->value = $value;
-		else $this->value = array();
-	}
-
-	##
-	# = public void add(string $key, JsonBase $item)
-	##
-	public function add($key, $item)
-	{
-		$this->value[$key] = $item;
-	}
-
-	##
-	# = public string serialize()
-	##
-	public function serialize()
-	{
-		$res = '';
-
-		foreach ($this->value as $k=>$v)
+		elseif (is_bool($obj))
 		{
-			if ($res != '') $res .= ',';
-			$res .= $k .':' . $v->serialize();
+			return ($obj ? 'true' : 'false');
 		}
+		elseif (is_int($obj) || is_float($obj))
+		{
+			return strval($obj);
+		}
+		elseif (is_array($obj))
+		{
+			$res = array();
+			$is_arr = true;
+			$cnt = count($obj);
 
-		return '{' . $res . '}';
+			foreach ($obj as $k=>$v)
+			{
+				$is_arr &&= (is_int($k) && $k>=0 && $k<$cnt);
+				$res[$k] = self::serialize($v);
+			}
+
+			if ($is_arr)
+			{
+				ksort($res);
+				return '[' . join(',', array_values($res)) . ']';
+			}
+			else
+			{
+				foreach ($res as $k=>&$v) {
+					$v = "'" . str_replace(self::$find, self::$repl, $k) . "':" . $v;
+				}
+
+				return '{' . join(',', array_values($res)) . '}';
+			}
+		}
+		elseif (is_object($obj))
+		{
+			if ($obj instanceof JsonSerializable) {
+				return $obj->json_serialize();
+			} else {
+				throw new Exception("Object doesn't implement JsonSerializable interface");
+			}
+		}
+		else
+		{
+			throw new Exception('Unknown variable type');
+		}
 	}
 }
 ##
 # .end
 ##
+
+function js_escape($str)
+{
+	$str = str_replace("</script>", "</'+'script>", Json::serialize($str));
+}

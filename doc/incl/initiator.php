@@ -6,10 +6,7 @@ require_once('incl/documenter.php');
 
 class Initiator
 {
-	/**
-	 * @static
-	 */
-	function check_init()
+	static function check_init()
 	{
 		if (!count(SDB::get_tables_list()))
 		{
@@ -21,25 +18,25 @@ class Initiator
 
 				foreach ($spl as $part)
 				{
-					$cmd =& new SDBCommand($part);
+					$cmd = new SDBCommand($part);
 					$cmd->execute();
 				}
 			}
 			else
 			{
-				$cmd =& new SDBCommand($sql);
+				$cmd = new SDBCommand($sql);
 				$cmd->execute();
 			}
 
 			SDB::reset_cached_data();
 
-			$fl =& new FileItem();
+			$fl = new FileItem();
 			$fl->parent_id = 0;
 			$fl->name = 's';
 			$fl->type = FILEITEM_FOLDER;
 			$fl->save();
 
-	        Initiator::fill_db(S_BASE, $fl->get_id());
+	        Initiator::fill_db(S_BASE, $fl->id);
 		}
 	}
 
@@ -53,7 +50,7 @@ class Initiator
 
 			$rpath = $path . '/' . $file;
 
-			$fl =& new FileItem();
+			$fl = new FileItem();
 			$fl->parent_id = $parent_id;
 			$fl->name = $file;
 
@@ -61,7 +58,7 @@ class Initiator
 			{
 				$fl->type = FILEITEM_FOLDER;
 				$fl->save();
-				Initiator::fill_db($rpath, $fl->get_id());
+				Initiator::fill_db($rpath, $fl->id);
 			}
 			else
 			{
@@ -71,7 +68,7 @@ class Initiator
 				$fl->type = FILEITEM_FILE;
 				$fl->save();
 
-				$doc =& new Documenter();
+				$doc = new Documenter();
 				$doc->parse($rpath);
 				$doc->save($fl);
 			}

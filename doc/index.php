@@ -9,11 +9,6 @@ require_once('incl/note_output.php');
 
 class IndexPage extends SPage
 {
-	function IndexPage()
-	{
-		$this->__construct();
-	}
-
 	function __construct()
 	{
 		parent::__construct();
@@ -35,9 +30,9 @@ dwrite_msg('', dump_str($dc->blocks));
 		$this->add_control('NoteOutput', new NoteOutput());
 
 		$root =& new FileItem();
-		$root->find(array('parent_id', '=', 0));
+		$root->find(array('parent_id=', 0));
 
-		$this->vars['files'] = $root->childs();
+		$this->vars['files'] = $root->childs;
 	}
 }
 
