@@ -194,7 +194,7 @@ class SDBSQLite extends SDBBase
 
 				/* no proper type found */
 
-				default           : error('SDBSQLite.get_table_columns : unknown field type "'.$typename.'"');
+				default           : throw new Exception("Unknown field type \"$typename\"");
 			}
 
 			$fields[$row['name']] = array('t' => $tp, 's' => $size);

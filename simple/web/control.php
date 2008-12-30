@@ -78,7 +78,7 @@ abstract class SControl
 	##
 	protected function render_template()
 	{
-		if (!strlen($this->template_name)) error('SControl.render_template : please set $template_name variable');
+		if (!strlen($this->template_name)) throw new Exception('Please set $template_name variable');
 
 		$tpl = new STemplate();
 		$tpl->vars =& $this->vars;

@@ -466,11 +466,11 @@ abstract class SDBBase
 
 		while (strlen($sql) && substr($sql, 0, 1)==' ') $sql = substr($sql, 1);
 
-		if (strtoupper(substr($sql, 0, 7)) != 'SELECT ') error("create_count_cmd - this is not SELECT command ($sql)");
+		if (strtoupper(substr($sql, 0, 7)) != 'SELECT ') throw new Exception("\"$sql\" is not SELECT command");
 
 		if (($pos = strpos(strtoupper($sql), ' FROM ')) === false) {
 			if (($pos = strpos(strtoupper($sql), "\tFROM ")) === false) {
-				error("create_count_cmd - can't find 'FROM' statement ($sql)");
+				throw new Exception("Can't find 'FROM' statement in \"$sql\"");
 			}
 		}
 

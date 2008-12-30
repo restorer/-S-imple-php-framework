@@ -64,7 +64,7 @@ class SDB
 				$db = new SDBSQLite($conf);
 				break;
 
-			default: error("DataBase type '$type' not recognized");
+			default: throw new Exception("DataBase type '$type' not recognized");
 		}
 
 		$db->call_init_hook();

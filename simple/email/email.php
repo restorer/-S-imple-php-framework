@@ -451,7 +451,7 @@ class SEmail
 
 			foreach ($this->attachments as $att)
 			{
-				if (strpos($att->mime_type, '/') === false) error('Invalid MIME type of the attachment.');
+				if (strpos($att->mime_type, '/') === false) throw new Exception('Invalid MIME type of the attachment.');
 
 				$attachs .= "--$boundary\r\n";
 				$attachs .= 'Content-Type: ' . $att->mime_type;
@@ -494,7 +494,7 @@ class SEmail
 					return $this->send_mail_sendmail($from, $this->to, $this->subject, $hdr, $body);
 
 				default:
-					error('Unknown mailer type (' . conf('mail.type') . ')');
+					throw new Exception('Unknown mailer type (' . conf('mail.type') . ')');
 			}
 		}
 

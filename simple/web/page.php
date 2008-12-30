@@ -204,7 +204,7 @@ class SPage
 	##
 	public function get_control($name)
 	{
-		if (!array_key_exists($name, $this->controls)) error("Control '$name' not found");
+		if (!array_key_exists($name, $this->controls)) throw new Exception("Control '$name' not found");
 		return $this->controls[$name];
 	}
 
@@ -388,10 +388,10 @@ class SPage
 	# = public void validate_select_items(string $name, array $data)
 	# [$name] Select control id
 	# [$data] Select items
-	# Throws error, when submitted value not exists in **$data**
+	# Throws exception, when submitted value not exists in **$data**
 	##
 	public function validate_select_items($name, $data) {
-		if (!$this->check_select_items($name, $data)) error('Please stop hack us, evil haxor.');
+		if (!$this->check_select_items($name, $data)) throw new Exception('Please stop hack us, evil haxor.');
 	}
 
 	##
