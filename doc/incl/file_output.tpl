@@ -1,4 +1,4 @@
-<div class="file <?= ($file->type == FILEITEM_FOLDER ? 'file-folder' : 'file-file') ?>">
+<div class="file <?= ($file->type == FileItem::Folder ? 'file-folder' : 'file-file') ?>">
 	<div class="file-title"><?@h $file->name ?></div>
 
 	<? each $file->blocks as $block ?>

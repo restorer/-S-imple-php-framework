@@ -36,7 +36,7 @@ conf_set('log.path', expand_tilde(conf('log.path')));
 define('DEBUG', conf('debug'));
 define('LOG_ERRORS', conf('log_errors'));
 
-if (!conf_has('cgi.init')) conf_set('cgi.init', true);
+if (!conf_has('use_cgi')) conf_set('use_cgi', true);
 if (!conf_has('http.port')) conf_set('http.port', 80);
 if (!conf_has('ssl.port')) conf_set('ssl.port', 443);
 if (!conf_has('ssl.root')) conf_set('ssl.root', conf('http.root'));
@@ -48,6 +48,7 @@ if (!conf_has('regexp.date')) conf_set('regexp.date', '/^(\d\d).(\d\d).(\d\d\d\d
 if (!conf_has('regexp.datetime')) conf_set('regexp.datetime', '/^(\d\d).(\d\d).(\d\d\d\d).(\d\d):(\d\d)(:(\d\d))?$/');
 if (!conf_has('cache.path')) conf_set('cache.path', BASE.'cache/');
 
+if (!conf_has('mail.send')) conf_set('mail.send', false);
 if (!conf_has('mail.type')) conf_set('mail.type', 'mail');
 if (!conf_has('mail.sendmail.path')) conf_set('mail.sendmail.path', '/var/qmail/bin/sendmail');
 if (!conf_has('mail.smtp.port')) conf_set('mail.smtp.port', 25);
@@ -57,7 +58,7 @@ if (!conf_has('mail.smtp.timeout')) conf_set('mail.smtp.timeout', 30);
 require_once(S_BASE.'core/functions.php');
 $modules = conf('modules.autoload');
 
-if (conf('cgi.init'))
+if (conf('use_cgi'))
 {
 	require_once(S_BASE . 'web/cgi.php');
 	SCGI::init();

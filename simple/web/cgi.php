@@ -16,7 +16,7 @@ class SCGI
 {
 	protected static function stripslashes_deep($value)
 	{
-		return (is_array($value) ? array_map(array(self, 'stripslashes_deep'), $value) : stripslashes($value));
+		return (is_array($value) ? array_map(array('SCGI', 'stripslashes_deep'), $value) : stripslashes($value));
 	}
 
 	##
@@ -42,93 +42,93 @@ class SCGI
 		$s_runconf->set('time.sql.parse', 0);
 		$s_runconf->set('time.template', 0);
 	}
-
-	##
-	# = bool inGET($k)
-	##
-	public static function inGET($k)
-	{
-		return array_key_exists($k, $_GET);
-	}
-
-	##
-	# = bool inPOST($k)
-	##
-	public static function inPOST($k)
-	{
-		return array_key_exists($k, $_POST);
-	}
-
-	##
-	# = bool inSESSION($k)
-	##
-	public static function inSESSION($k)
-	{
-		return array_key_exists($k, $_SESSION);
-	}
-
-	##
-	# = bool inCOOKIE($k)
-	##
-	public static function inCOOKIE($k)
-	{
-		return array_key_exists($k, $_COOKIE);
-	}
-
-	##
-	# = mixed GET(string $k, mixed $def='')
-	##
-	public static function GET($k, $def='')
-	{
-		return (array_key_exists($k, $_GET) ? $_GET[$k] : $def);
-	}
-
-	##
-	# = mixed POST(string $k, mixed $def='')
-	##
-	public static function POST($k, $def='')
-	{
-		return (array_key_exists($k, $_POST) ? $_POST[$k] : $def);
-	}
-
-	##
-	# = mixed SESSION(string $k, mixed $def='')
-	##
-	public static function SESSION($k, $def='')
-	{
-		return (array_key_exists($k, $_SESSION) ? $_SESSION[$k] : $def);
-	}
-
-	##
-	# = mixed COOKIE(string $k, mixed $def='')
-	##
-	public static function COOKIE($k, $def='')
-	{
-		return (array_key_exists($k, $_COOKIE) ? $_COOKIE[$k] : $def);
-	}
-
-	##
-	# = mixed SERVER(string $k, mixed $def='')
-	##
-	public static function SERVER($k, $def='')
-	{
-		// begin of code taken from PHPMailer class
-		global $HTTP_SERVER_VARS;
-		global $HTTP_ENV_VARS;
-
-		if (!isset($_SERVER))
-		{
-			$_SERVER = $HTTP_SERVER_VARS;
-
-			if (!isset($_SERVER['REMOTE_ADDR'])) {
-				$_SERVER = $HTTP_ENV_VARS;	// must be Apache
-			}
-		}
-		// end of code taken from PHPMailer class
-
-		return (array_key_exists($k, $_SERVER) ? $_SERVER[$k] : $def);
-	}
 }
 ##
 # .end
 ##
+
+##
+# = bool inGET($k)
+##
+function inGET($k)
+{
+	return array_key_exists($k, $_GET);
+}
+
+##
+# = bool inPOST($k)
+##
+function inPOST($k)
+{
+	return array_key_exists($k, $_POST);
+}
+
+##
+# = bool inSESSION($k)
+##
+function inSESSION($k)
+{
+	return array_key_exists($k, $_SESSION);
+}
+
+##
+# = bool inCOOKIE($k)
+##
+function inCOOKIE($k)
+{
+	return array_key_exists($k, $_COOKIE);
+}
+
+##
+# = mixed _GET(string $k, mixed $def='')
+##
+function _GET($k, $def='')
+{
+	return (array_key_exists($k, $_GET) ? $_GET[$k] : $def);
+}
+
+##
+# = mixed _POST(string $k, mixed $def='')
+##
+function _POST($k, $def='')
+{
+	return (array_key_exists($k, $_POST) ? $_POST[$k] : $def);
+}
+
+##
+# = mixed _SESSION(string $k, mixed $def='')
+##
+function _SESSION($k, $def='')
+{
+	return (array_key_exists($k, $_SESSION) ? $_SESSION[$k] : $def);
+}
+
+##
+# = mixed _COOKIE(string $k, mixed $def='')
+##
+function _COOKIE($k, $def='')
+{
+	return (array_key_exists($k, $_COOKIE) ? $_COOKIE[$k] : $def);
+}
+
+##
+# = mixed _SERVER(string $k, mixed $def='')
+##
+function _SERVER($k, $def='')
+{
+	// begin of code taken from PHPMailer class
+	global $HTTP_SERVER_VARS;
+	global $HTTP_ENV_VARS;
+
+	if (!isset($_SERVER))
+	{
+		$_SERVER = $HTTP_SERVER_VARS;
+
+		if (!isset($_SERVER['REMOTE_ADDR'])) {
+			$_SERVER = $HTTP_ENV_VARS;	// must be Apache
+		}
+	}
+	// end of code taken from PHPMailer class
+
+	return (array_key_exists($k, $_SERVER) ? $_SERVER[$k] : $def);
+}

@@ -33,7 +33,7 @@ class Initiator
 			$fl = new FileItem();
 			$fl->parent_id = 0;
 			$fl->name = 's';
-			$fl->type = FILEITEM_FOLDER;
+			$fl->type = FileItem::Folder;
 			$fl->save();
 
 	        Initiator::fill_db(S_BASE, $fl->id);
@@ -56,7 +56,7 @@ class Initiator
 
 			if (is_dir($rpath))
 			{
-				$fl->type = FILEITEM_FOLDER;
+				$fl->type = FileItem::Folder;
 				$fl->save();
 				Initiator::fill_db($rpath, $fl->id);
 			}
@@ -65,7 +65,7 @@ class Initiator
 				if ($file == 'all.php') continue;
 				if (substr($file, -4) != '.php') continue;
 
-				$fl->type = FILEITEM_FILE;
+				$fl->type = FileItem::File;
 				$fl->save();
 
 				$doc = new Documenter();

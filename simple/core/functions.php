@@ -145,7 +145,7 @@ function error($message, $rm_from_backtrace=false)
 		$debuglog_str = dflush_str();
 
 		if (LOG_ERRORS) {
-			_log("[Error happened]\n$message\n\n$backtrace_str\n\n$debuglog_str\n\n");
+			_log("[[ Error happened ]]\n\n$message\n\n$backtrace_str\n\n$debuglog_str\n\n");
 		}
 
 		if (DEBUG)
@@ -157,12 +157,19 @@ function error($message, $rm_from_backtrace=false)
 			echo "<pre>$message\n\n$backtrace_str\n\n$debuglog_str</pre>";
 		}
 	}
-	else
-	{
+
+	if (!DEBUG) {
 		echo "Server is out to lunch. Please wait about 5 minutes and try to reload page. If it doesn't help, please contact administrator.";
 	}
 
 	die;
+}
+
+function echo_debug()
+{
+	echo '<pre style="text-align:left;border-top:1px solid #CCC;padding:5px;" class="s-debug">';
+	echo get_debuglog_html(dflush_str());
+	echo '</pre>';
 }
 
 function i_on_php_error($code, $message, $filename='', $linenumber=-1, $context=array())

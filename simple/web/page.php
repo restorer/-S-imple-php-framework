@@ -141,7 +141,7 @@ class SPage
 	##
 	public function cache_remove($name)
 	{
-		if (InSESSION('page.'.$this->script_name())) {
+		if (inSESSION('page.'.$this->script_name())) {
 			if (array_key_exists($name, $_SESSION['page.'.$this->script_name()])) {
 				unset($_SESSION['page.'.$this->script_name()][$name]);
 			}

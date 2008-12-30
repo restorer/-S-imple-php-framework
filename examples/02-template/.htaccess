@@ -1,7 +1,9 @@
 DirectoryIndex index.php
+Options -Indexes
 
 RewriteEngine On
-RewriteRule	^(.*).tpl$		403.html	[L]
+RewriteRule	^(.*).tpl$ - [F]
 
-RewriteCond	%{REQUEST_FILENAME}	!-f
-RewriteRule	^([^.]+)$			$1.php		[L]
+RewriteCond	%{REQUEST_FILENAME} !-f
+RewriteCond	%{REQUEST_FILENAME} !-d
+RewriteRule	^([^.]+)$ $1.php [L]

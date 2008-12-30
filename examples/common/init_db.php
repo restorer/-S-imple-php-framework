@@ -10,13 +10,13 @@ if (!count(SDB::get_tables_list()))
 
 		foreach ($spl as $part)
 		{
-			$cmd =& new SDBCommand($part);
+			$cmd = new SDBCommand($part);
 			$cmd->execute();
 		}
 	}
 	else
 	{
-		$cmd =& new SDBCommand($sql);
+		$cmd = new SDBCommand($sql);
 		$cmd->execute();
 	}
 

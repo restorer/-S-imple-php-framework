@@ -1,10 +1,10 @@
 <?php
 
-define('FILEITEM_FOLDER', 0);
-define('FILEITEM_FILE', 1);
-
 class FileItem extends SRecord
 {
+	const Folder = 0;
+	const File = 1;
+
 	public $parent_id = 0;
 	public $name = '';
 	public $type = 0;

@@ -15,21 +15,21 @@ class IndexPage extends SPage
 		$this->add_event(PAGE_INIT, 'on_init');
 	}
 
-	function on_init()
+	public function on_init()
 	{
 		Initiator::check_init();
 
-/*
-$dc =& new Documenter();
-$dc->parse(S_BASE.'data/json.php');
-dwrite_msg('', dump_str($dc->blocks));
-*/
+		/*
+		$dc =& new Documenter();
+		$dc->parse(S_BASE.'data/json.php');
+		dwrite_msg('', dump_str($dc->blocks));
+		*/
 
 		$this->add_control('FileOutput', new FileOutput());
 		$this->add_control('BlockOutput', new BlockOutput());
 		$this->add_control('NoteOutput', new NoteOutput());
 
-		$root =& new FileItem();
+		$root = new FileItem();
 		$root->find(array('parent_id=', 0));
 
 		$this->vars['files'] = $root->childs;

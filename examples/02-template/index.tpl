@@ -22,7 +22,7 @@ table.login-box th { text-align: left; }
 			<? if $login_error ?>
 			<tr>
 				<td colspan="2" align="center" class="error">
-					<?# $login_error ?>
+					<?@h $login_error ?>
 				</td>
 			</tr>
 			<? end ?>
@@ -43,7 +43,7 @@ table.login-box th { text-align: left; }
 	</form>
 	<? else ?>
 	<form method="post">
-		<p>Hello, <strong><?# $user_name ?></strong>.</p>
+		<p>Hello, <strong><?@h $user_name ?></strong>.</p>
 		<input type="submit" name="try_again" value=" Try again " />
 	</form>
 	<? end ?>

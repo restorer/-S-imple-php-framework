@@ -1,156 +1,127 @@
-body, table
-{
+body, table {
 	font-family: Tahoma, Arial;
 	font-size: 12px;
 }
 
-a img
-{
+a img {
 	border: none;
 }
 
-h1
-{
+h1 {
 	margin: 0;
 	padding: 0 0 5px 0;
 }
 
-.file
-{
+.file {
 	padding: 5px;
 	margin: 5px;
 }
 
-.file .file-title
-{
+.file .file-title {
 	font-weight: bold;
 }
 
-.file-folder
-{
+.file-folder {
 	background-color: #888;
 	border: 1px solid #000;
 }
 
-.file-folder .file-title
-{
+.file-folder .file-title {
 	color: #FFF;
 }
 
-.file-file
-{
+.file-file {
 	background-color: #EEE;
 	border: 1px solid #444;
 }
 
-.file-file .file-title
-{
+.file-file .file-title {
 	color: #000;
 }
 
-.block
-{
+.block {
 	padding: 5px;
 	margin-left: 5px;
 	margin-right: 5px;
 }
 
-.block-has-childs
-{
+.block-has-childs {
 	border: 1px solid #CCC;
 	background-color: #FFF;
 	margin-top: 5px;
 	margin-bottom: 5px;
 }
 
-.block .block-title
-{
+.block .block-title {
 	font-weight: bold;
 }
 
-.block .block-sep
-{
+.block .block-sep {
 	height: 3px;
 	font-size: 3px;
 	line-height: 3px;
 }
 
-.block .block-text
-{
+.block .block-text {
 }
 
-.block .block-example
-{
+.block .block-example {
 	margin: 5px;
 	padding: 5px;
 	background-color: #EEF;
 	border: 1px solid navy;
 }
 
-.block .block-example .block-example-header
-{
+.block .block-example .block-example-header {
 	font-weight: bold;
 	padding-bottom: 2px;
 }
 
-.note
-{
+.note {
 }
 
-.note-sep
-{
+.note-sep {
 }
 
-.note-name
-{
+.note-name {
 	font-weight: bold;
 }
 
-.note-var
-{
+.note-var {
 	color: green;
 }
 
-.note-def
-{
+.note-def {
 	color: #F44;
 }
 
-.note-description
-{
+.note-description {
 }
 
-.hl-type
-{
+.hl-type {
 	color: blue;
 }
 
-.hl-var
-{
+.hl-var {
 	color: green;
 }
 
-.hl-bra
-{
+.hl-bra {
 	color: #842;
 }
 
-.hl-num
-{
+.hl-num {
 	color: #44F;
 }
 
-.hl-bool
-{
+.hl-bool {
 	color: #884;
 }
 
-.hl-def
-{
+.hl-def {
 	color: #F44;
 }
 
-.hl-func
-{
+.hl-func {
 	color: navy;
 }

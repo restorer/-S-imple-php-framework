@@ -13,7 +13,7 @@ body { font-family: Tahoma, Arial; font-size: 0.8em; }
 	<h1>Simpliest ever example at <span style="color:#800;"><?php echo conf('sitename'); ?></span></h1>
 	<p>
 		This example use only few core functions.<br />
-		<a href="?<?php echo InGET('index') ? ('index='._GET('index').'&') : ''; ?>gimmedebug=1">Enable debug info</a>
+		<a href="?<?php echo inGET('index') ? ('index='._GET('index').'&') : ''; ?>gimmedebug=1">Enable debug info</a>
 		|
 		<a href="?index=0&amp;gimmedebug=1">Hack A</a>
 		|
@@ -46,7 +46,7 @@ for ($i = 1; $i <= 9; $i++)
 	if ($i == $index) {
 		echo "[$i]";
 	} else {
-		if (InGET('gimmedebug')) {
+		if (inGET('gimmedebug')) {
 			echo '&nbsp;<a href="?index='.$i.'&amp;gimmedebug=1">'.$i.'</a>&nbsp;';
 		} else {
 			echo '&nbsp;<a href="?index='.$i.'">'.$i.'</a>&nbsp;';
@@ -58,7 +58,7 @@ for ($i = 1; $i <= 9; $i++)
 	:.</strong>
 <?php
 dwrite('[End]');
-if (DEBUG) dflush();
+if (DEBUG) echo_debug();
 ?>
 </body>
 </html>
