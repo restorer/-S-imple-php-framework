@@ -10,10 +10,59 @@
 
 ##
 # .begin
-# = class SDates
+# = class SDate
 ##
-class SDates
+class SDate
 {
+	public static $ru_months_short = array('янв.', 'фев.', 'мар.', 'апр.', 'мая', 'июня', 'июля', 'авг.', 'сен.', 'окт.', 'ноя.', 'дек.');
+	public static $ru_months_full = array('января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря');
+
+	public static function format($value, $format)
+	{
+		if (preg_match('/(\d\d\d\d)-(\d\d)-(\d\d)\s(\d\d):(\d\d):(\d\d)/', $value, $mt))
+		{
+			$dt = mktime($mt[4], $mt[5], $mt[6], $mt[2], $mt[3], $mt[1]);
+			$is_full = true;
+
+			$year = intval($mt[1]);
+			$mon = intval($mt[2]);
+			$day = intval($mt[3]);
+		}
+		else if (preg_match('/(\d\d\d\d)-(\d\d)-(\d\d)/', $value, $mt))
+		{
+			$dt = mktime(0, 0, 0, $mt[2], $mt[3], $mt[1]);
+			$is_full = false;
+
+			$year = intval($mt[1]);
+			$mon = intval($mt[2]);
+			$day = intval($mt[3]);
+		}
+		else
+		{
+			throw new Exception("\"$value\" is not valid date");
+		}
+
+		switch ($format)
+		{
+			case 'ru-short':
+				return ($day . ' ' . self::$ru_months_short[$mon] . ' ' . $year . ' г.');
+				break;
+
+			case 'ru-full':
+				return ($day . ' ' . self::$ru_months_full[$mon] . ' ' . $year . ' г.');
+				break;
+
+			default:
+				if ($is_full) return date('Y-m-d H:i:s', $dt);
+				else return date('Y-m-d', $dt);
+		}
+	}
+
+	##
+	# Old functions below.
+	# **TODO:** Refactor code.
+	##
+
 	##
 	# = static string datetime_to_string(datetime_string $value)
 	##
@@ -30,7 +79,7 @@ class SDates
 	##
 	public static function formatted_datetime($value)
 	{
-		$str = SDates::datetime_to_string($value);
+		$str = SDate::datetime_to_string($value);
 		if ($str == '') return array('', '');
 		return explode(' ', $str);
 	}

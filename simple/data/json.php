@@ -29,8 +29,8 @@ interface JsonSerializable
 ##
 class Json
 {
-	protected static $find = array('\\',   "'",  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
-	protected static $repl = array('\\\\', "\'", '\/', '\b', '\f', '\n', '\r', '\t', '\u');
+	public static $find = array('\\',   "'",  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
+	public static $repl = array('\\\\', "\'", '\/', '\b', '\f', '\n', '\r', '\t', '\u');
 
 	##
 	# = public static string serialize(mixed $obj)
@@ -58,7 +58,7 @@ class Json
 
 			foreach ($obj as $k=>$v)
 			{
-				$is_arr &&= (is_int($k) && $k>=0 && $k<$cnt);
+				$is_arr = $is_arr && (is_int($k) && $k>=0 && $k<$cnt);
 				$res[$k] = self::serialize($v);
 			}
 
@@ -96,5 +96,5 @@ class Json
 
 function js_escape($str)
 {
-	$str = str_replace("</script>", "</'+'script>", Json::serialize($str));
+	return str_replace("</script>", "</'+'script>", str_replace(Json::$find, Json::$repl, $str));
 }

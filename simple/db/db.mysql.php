@@ -148,7 +148,7 @@ class SDBMySql extends SDBBase
 	protected function do_get_tables_list()
 	{
 		$cmd = new SDBCommand("SHOW TABLES FROM @dbname");
-		$cmd->set('dbname', conf('db.name'), DB_TableName);
+		$cmd->set('dbname', conf('db.name'), SDB::TableName);
 		$res = $this->get_all($cmd);
 
 		$arr = array();
@@ -166,7 +166,7 @@ class SDBMySql extends SDBBase
 	protected function do_get_table_columns($table)
 	{
 		$cmd = new SDBCommand("SHOW COLUMNS FROM @tbname");
-		$cmd->set('tbname', $table, DB_TableName);
+		$cmd->set('tbname', $table, SDB::TableName);
 		$res = $this->get_all($cmd);
 
 		$fields = array();
@@ -191,29 +191,29 @@ class SDBMySql extends SDBBase
 
 			switch ($typename)
 			{
-				case 'varchar'    : $tp = DB_String;   break;
-				case 'tinyint'    : $tp = DB_Int;      break;
-				case 'text'       : $tp = DB_Blob;     break;
-				case 'date'       : $tp = DB_Date;     break;
-				case 'smallint'   : $tp = DB_Int;      break;
-				case 'mediumint'  : $tp = DB_Int;      break;
-				case 'int'        : $tp = DB_Int;      break;
-				case 'bigint'     : $tp = DB_Int;      break;
-				case 'float'      : $tp = DB_Float;    break;
-				case 'double'     : $tp = DB_Float;    break;
-				case 'decimal'    : $tp = DB_Float;    break;
-				case 'datetime'   : $tp = DB_DateTime; break;
+				case 'varchar'    : $tp = SDB::String;   break;
+				case 'tinyint'    : $tp = SDB::Int;      break;
+				case 'text'       : $tp = SDB::Blob;     break;
+				case 'date'       : $tp = SDB::Date;     break;
+				case 'smallint'   : $tp = SDB::Int;      break;
+				case 'mediumint'  : $tp = SDB::Int;      break;
+				case 'int'        : $tp = SDB::Int;      break;
+				case 'bigint'     : $tp = SDB::Int;      break;
+				case 'float'      : $tp = SDB::Float;    break;
+				case 'double'     : $tp = SDB::Float;    break;
+				case 'decimal'    : $tp = SDB::Float;    break;
+				case 'datetime'   : $tp = SDB::DateTime; break;
 				case 'timestamp'  : throw new Exception('TODO: check mysql manual for "timestamp"'); break;
 				case 'time'       : throw new Exception('TODO: check mysql manual for "time"'); break;
 				case 'year'       : throw new Exception('TODO: check mysql manual for "year"'); break;
-				case 'char'       : $tp = DB_String;   break;
-				case 'tinyblob'   : $tp = DB_Blob;     break;
-				case 'tinytext'   : $tp = DB_Blob;     break;
-				case 'blob'       : $tp = DB_Blob;     break;
-				case 'mediumblob' : $tp = DB_Blob;     break;
-				case 'mediumtext' : $tp = DB_Blob;     break;
-				case 'longblob'   : $tp = DB_Blob;     break;
-				case 'longtext'   : $tp = DB_Blob;     break;
+				case 'char'       : $tp = SDB::String;   break;
+				case 'tinyblob'   : $tp = SDB::Blob;     break;
+				case 'tinytext'   : $tp = SDB::Blob;     break;
+				case 'blob'       : $tp = SDB::Blob;     break;
+				case 'mediumblob' : $tp = SDB::Blob;     break;
+				case 'mediumtext' : $tp = SDB::Blob;     break;
+				case 'longblob'   : $tp = SDB::Blob;     break;
+				case 'longtext'   : $tp = SDB::Blob;     break;
 				case 'enum'       : throw new Exception('Unsupported type "enum"'); break;
 				case 'set'        : throw new Exception('TODO: check mysql manual for "set"'); break;
 				default           : throw new Exception("Unknown field type \"$typename\"");
