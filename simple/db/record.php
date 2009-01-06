@@ -417,7 +417,7 @@ class SRecord extends SEntity
 					$suff = ' DESC';
 				}
 
-				if (!array_key_exists($item, $this->_db_fields)) throw new Exception("Unknown field \"$fld\"");
+				if (!array_key_exists($item, $this->_db_fields)) throw new Exception("Unknown field \"$item\"");
 				$res[] = "@_fo_{$item}{$suff}";
 			}
 

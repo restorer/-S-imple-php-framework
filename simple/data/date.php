@@ -14,33 +14,27 @@
 ##
 class SDate
 {
-	public static $ru_months_short = array('янв.', 'фев.', 'мар.', 'апр.', 'мая', 'июня', 'июля', 'авг.', 'сен.', 'окт.', 'ноя.', 'дек.');
-	public static $ru_months_full = array('января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря');
+	public static $ru_months_short = array('дек.', 'янв.', 'фев.', 'мар.', 'апр.', 'мая', 'июня', 'июля', 'авг.', 'сен.', 'окт.', 'ноя.', 'дек.');
+	public static $ru_months_full = array('декабря', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря');
+
+	public static function parse($str_date)
+	{
+		if (preg_match('/(\d\d\d\d)-(\d\d)-(\d\d)\s(\d\d):(\d\d):(\d\d)/', $str_date, $mt)) {
+			return mktime($mt[4], $mt[5], $mt[6], $mt[2], $mt[3], $mt[1]);
+		} else if (preg_match('/(\d\d\d\d)-(\d\d)-(\d\d)/', $str_date, $mt)) {
+			return mktime(0, 0, 0, $mt[2], $mt[3], $mt[1]);
+		} else {
+			throw new Exception("\"$str_date\" is not valid date");
+		}
+	}
 
 	public static function format($value, $format)
 	{
-		if (preg_match('/(\d\d\d\d)-(\d\d)-(\d\d)\s(\d\d):(\d\d):(\d\d)/', $value, $mt))
-		{
-			$dt = mktime($mt[4], $mt[5], $mt[6], $mt[2], $mt[3], $mt[1]);
-			$is_full = true;
+		$tm = (is_numeric($value) ? $value : self::parse($value));
 
-			$year = intval($mt[1]);
-			$mon = intval($mt[2]);
-			$day = intval($mt[3]);
-		}
-		else if (preg_match('/(\d\d\d\d)-(\d\d)-(\d\d)/', $value, $mt))
-		{
-			$dt = mktime(0, 0, 0, $mt[2], $mt[3], $mt[1]);
-			$is_full = false;
-
-			$year = intval($mt[1]);
-			$mon = intval($mt[2]);
-			$day = intval($mt[3]);
-		}
-		else
-		{
-			throw new Exception("\"$value\" is not valid date");
-		}
+		$year = intval(date('Y', $tm));
+		$mon = intval(date('m', $tm));
+		$day = intval(date('d', $tm));
 
 		switch ($format)
 		{
@@ -53,8 +47,7 @@ class SDate
 				break;
 
 			default:
-				if ($is_full) return date('Y-m-d H:i:s', $dt);
-				else return date('Y-m-d', $dt);
+				return date('Y-m-d H:i:s', $tm);
 		}
 	}
 

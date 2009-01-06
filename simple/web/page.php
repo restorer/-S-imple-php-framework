@@ -492,9 +492,9 @@ class SPage
 			dwrite('SQL queries takes: ' . number_format($s_runconf->get('time.sql.query'), 8));
 			dwrite('Templates takes: ' . number_format($s_runconf->get('time.template'), 8) . ' (approx, including template loading)');
 
-			echo '<div style="position:absolute;top:0;left:0;font-size:10px;font-family:Tahoma;font-weight:bold;background-color:#000;color:#FFF;cursor:pointer;cursor:hand;"';
+			echo '<div style="z-index:99999;position:absolute;top:0;left:0;font-size:10px;font-family:Tahoma;font-weight:bold;background-color:#000;color:#FFF;cursor:pointer;cursor:hand;"';
 			echo ' onclick="var s=document.getElementById(\'__s_debug__\').style;s.display=s.display==\'\'?\'none\':\'\';return false;">#</div>';
-			echo '<div id="__s_debug__" style="position:absolute;top:15px;left:10px;border:1px solid #888;background-color:#FFF;overflow:auto;width:800px;height:300px;display:none;">';
+			echo '<div id="__s_debug__" style="z-index:99999;position:absolute;top:15px;left:10px;border:1px solid #888;background-color:#FFF;overflow:auto;width:800px;height:300px;display:none;">';
 			echo '<pre style="text-align:left;padding:5px;margin:0;" class="s-debug">';
 			echo get_debuglog_html(dflush_str());
 			echo '</pre></div>';
