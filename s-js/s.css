@@ -321,3 +321,7 @@
 	font-weight: bold;
 	padding-bottom: 10px;
 }
+
+.s-form table td {
+	padding: 0;
+}

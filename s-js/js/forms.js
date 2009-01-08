@@ -45,16 +45,9 @@ SFormRow = function()
 	this.row_tr = null;
 	this.parent = null;
 
-	this.init = function(parent, id, type, title, info, validators, params, width)
+	this.init = function(parent, validators)
 	{
 		this.parent = parent;
-
-		if (typeof(id)!=$undef && id!=null) this.id = id;
-		if (typeof(type)!=$undef && type!=null) this.type = type;
-		if (typeof(title)!=$undef && title!=null) this.title.value = title;
-		if (typeof(info)!=$undef && info!=null) this.info.value = info;
-		if (typeof(params)!=$undef && params!=null) this.params = params;
-		if (typeof(width)!=$undef && width!=null) this.width = width;
 
 		if (typeof(validators)!=$undef && validators!=null) {
 			for (var i = 0; i < validators.length; i++) this.add_validator(validators[i]);
@@ -242,6 +235,11 @@ SFormRow = function()
 			this.input.element.dom().style.width = (width ? (width + 'px') : 'auto');
 		}
 	}
+
+	this.can_clear = function()
+	{
+		return (this.type != 'label');
+	}
 }
 
 SFormButton = function()
@@ -350,12 +348,15 @@ SForm = function()
 
 	this.add_row = function(row_data)
 	{
-		var row = $new(SFormRow, this, row_data.id, row_data.type, row_data.title,
-						(typeof(row_data.info)==$undef ? null : row_data.info),
-						(typeof(row_data.validate)==$undef ? null : row_data.validate),
-						(typeof(row_data.params)==$undef ? {} : row_data.params),
-						this.fields_width
-					);
+		var row = $new(SFormRow, this, row_data.validate);
+
+		row.id = row_data.id;
+		row.type = row_data.type;
+		row.params = (typeof(row_data.params) == $undef ? {} : row_data.params);
+		row.width = this.fields_width;
+
+		if (typeof(row_data.title) != $undef) row.set_title(row_data.title);
+		if (typeof(row_data.info) != $undef) row.set_info(row_data.info);
 
 		if (typeof(row_data.def) != $undef) row.set_value(row_data.def);
 
@@ -482,7 +483,12 @@ SForm = function()
 
 	this.clear = function()
 	{
-		for (var i = 0; i < this.rows.length; i++) this.rows[i].set_value('');
+		for (var i = 0; i < this.rows.length; i++) {
+			if (this.rows[i].can_clear()) {
+				this.rows[i].set_value('');
+			}
+		}
+
 		this.clear_errors();
 		this.clear_info();
 	}
