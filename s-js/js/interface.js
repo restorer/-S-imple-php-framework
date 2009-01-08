@@ -502,8 +502,8 @@ SNavigator = function()
 
 				var td_cls = '';
 
-				if (j == 0) S.add_class(td, 's-nav-first');
-				if (j == this._header.length-1) S.add_class(td, 's-nav-last');
+				if (i == 0) S.add_class(td, 's-nav-first');
+				if (i == this._header.length-1) S.add_class(td, 's-nav-last');
 
 				var id = this._header[i].id;
 				td.innerHTML = (typeof(data[id])==$undef ? '&nbsp;' : (String(data[id])=='' ? '&nbsp;' : String(data[id])));

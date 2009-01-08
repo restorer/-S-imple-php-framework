@@ -6,7 +6,7 @@ SValidators = function()
 			return (value == '' ? 'This field is required' : '');
 		},
 
-		compare: function(value, from, field)
+		compare: function(value, form, field)
 		{
 			var row = form.get_row(field);
 			return (row.get_value() == value ? '' : 'Must match to ' + row.get_title());
@@ -31,6 +31,8 @@ SFormRow = function()
 
 	this.id = '';
 	this.type = '';
+	this.width = 0;		// 0 - no width override
+	this.validate_when_hidden = false;
 
 	this.title = { element: null, value: '' };
 	this.input = { element: null, value: '' };
@@ -43,7 +45,7 @@ SFormRow = function()
 	this.row_tr = null;
 	this.parent = null;
 
-	this.init = function(parent, id, type, title, info, validators, params)
+	this.init = function(parent, id, type, title, info, validators, params, width)
 	{
 		this.parent = parent;
 
@@ -52,6 +54,7 @@ SFormRow = function()
 		if (typeof(title)!=$undef && title!=null) this.title.value = title;
 		if (typeof(info)!=$undef && info!=null) this.info.value = info;
 		if (typeof(params)!=$undef && params!=null) this.params = params;
+		if (typeof(width)!=$undef && width!=null) this.width = width;
 
 		if (typeof(validators)!=$undef && validators!=null) {
 			for (var i = 0; i < validators.length; i++) this.add_validator(validators[i]);
@@ -66,7 +69,7 @@ SFormRow = function()
 	this.set_title = function(title)
 	{
 		this.title.value = title;
-		if (this.title.element != null) this.title.element.innerHTML = this.parent.encode(title) + ':';
+		if (this.title.element != null) this.title.element.innerHTML = (title=='' ? '&nbsp;' : this.parent.encode(title) + ':');
 	}
 
 	this.get_info = function()
@@ -87,14 +90,33 @@ SFormRow = function()
 
 	this.get_value = function()
 	{
-		if (this.input.element != null) this.input.value = this.input.element.get_value();
+		if (this.input.element != null)
+		{
+			if (this.type != 'label') {
+				this.input.value = this.input.element.get_value();
+			}
+		}
+
 		return this.input.value;
 	}
 
 	this.set_value = function(value)
 	{
 		this.input.value = value;
-		if (this.input.element != null) this.input.element.set_value(value);
+
+		if (this.input.element != null)
+		{
+			switch (this.type)
+			{
+				case 'label':
+					this.input.element.innerHTML = value;
+					break;
+
+				default:
+					this.input.element.set_value(value);
+					break;
+			}
+		}
 	}
 
 	this.render = function(container)
@@ -102,7 +124,7 @@ SFormRow = function()
 		this.row_tr = S.create('TR', { vAlign: 'top' });
 		container.appendChild(this.row_tr);
 
-		this.title.element = S.create('TH', { innerHTML: this.parent.encode(this.title.value) + ':' });
+		this.title.element = S.create('TH', { innerHTML: (this.title.value=='' ? '&nbsp;' : this.parent.encode(this.title.value) + ':') });
 		this.row_tr.appendChild(this.title.element);
 
 		var input_td = S.create('TD');
@@ -110,12 +132,19 @@ SFormRow = function()
 
 		switch (this.type)
 		{
+			case 'label':
+				this.input.element = S.create('DIV');
+				this.input.element.innerHTML = this.input.value;
+				input_td.appendChild(this.input.element);
+				if (this.width) this.input.element.style.width = this.width + 'px';
+				break;
+
 			default:
 				this.input.element = $new(SInput, this.type, '', this.input.value, this.params);
+				this.input.element.render(input_td);
+				if (this.width) this.input.element.dom().style.width = this.width + 'px';
 				break;
 		}
-
-		this.input.element.render(input_td);
 
 		this.info.element = S.create('SPAN',
 			{ className:'s-form-info', innerHTML:this.parent.encode(this.info.value) },
@@ -140,6 +169,8 @@ SFormRow = function()
 
 	this.validate = function()
 	{
+		if (this.row_tr.style.display == 'none' && !this.validate_when_hidden) return '';
+
 		var val = this.get_value();
 
 		for (var i = 0; i < this.validators.length; i++)
@@ -170,9 +201,46 @@ SFormRow = function()
 
 	this.clear_error = function()
 	{
-		if (this.input.element != null) S.rm_class(this.input.element.dom(), 's-form-error-el');
+		if (this.input.element != null)
+		{
+			if (this.type != 'label') {
+				S.rm_class(this.input.element.dom(), 's-form-error-el');
+			}
+		}
+
 		this.error.value = '';
 		if (this.error.element != null) this.error.element.style.display = 'none';
+	}
+
+	this.set_visibility = function(visible)
+	{
+		this.row_tr.style.display = (visible ? '' : 'none');
+	}
+
+	this.get_visibility = function()
+	{
+		return (this.row_tr.style.display != 'none');
+	}
+
+	this.show = function()
+	{
+		this.set_visibility(true);
+	}
+
+	this.hide = function()
+	{
+		this.set_visibility(false);
+	}
+
+	this.set_width = function(width)
+	{
+		this.width = width;
+
+		if (this.type == 'label') {
+			this.input.element.style.width = (width ? (width + 'px') : 'auto');
+		} else {
+			this.input.element.dom().style.width = (width ? (width + 'px') : 'auto');
+		}
 	}
 }
 
@@ -242,6 +310,7 @@ SForm = function()
 	this.errors = {};
 	this.info_tr = null;
 	this.info_td = null;
+	this.fields_width = 0;	// 0 - no width override
 
 	this.init = function(form_data)
 	{
@@ -284,7 +353,8 @@ SForm = function()
 		var row = $new(SFormRow, this, row_data.id, row_data.type, row_data.title,
 						(typeof(row_data.info)==$undef ? null : row_data.info),
 						(typeof(row_data.validate)==$undef ? null : row_data.validate),
-						(typeof(row_data.params)==$undef ? {} : row_data.params)
+						(typeof(row_data.params)==$undef ? {} : row_data.params),
+						this.fields_width
 					);
 
 		if (typeof(row_data.def) != $undef) row.set_value(row_data.def);
@@ -313,6 +383,7 @@ SForm = function()
 	this.create = function(form_data)
 	{
 		this.title.value = (typeof(form_data.title)==$undef ? '' : form_data.title);
+		this.fields_width = (typeof(form_data.fields_width)==$undef ? 0 : form_data.fields_width);
 
 		for (var i = 0; i < form_data.rows.length; i++) this.add_row(form_data.rows[i]);
 		for (var i = 0; i < form_data.buttons.length; i++) this.add_button(form_data.buttons[i]);
@@ -380,15 +451,12 @@ SForm = function()
 		if (typeof(this.errors['z']) != $undef)
 		{
 			var err = this.errors['z'];
-			err_msg += '<strong>';
 
 			for (var j = 0; j < err.length; j++)
 			{
 				err_msg += this.encode(err[j]);
 				if (j != err.length-1) errMsg += ', ';
 			}
-
-			err_msg += '</strong><br />';
 		}
 
 		for (var i = 0; i < this.rows.length; i++)
@@ -455,5 +523,11 @@ SForm = function()
 	this.clear_info = function()
 	{
 		this.set_info('');
+	}
+
+	this.set_fields_width = function(width)
+	{
+		this.fields_width = width;
+		for (var i = 0; i < this.rows.length; i++) rows[i].set_width(width);
 	}
 }

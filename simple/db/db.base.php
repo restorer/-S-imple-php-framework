@@ -84,7 +84,21 @@ abstract class SDBBase
 			$ch = $sql{$pos};
 			$pos++;
 
-			if ($ch == '@')
+			if ($ch=='\'' || $ch=='`' || $ch=='"')
+			{
+				$buf .= $ch;
+				$chx = $ch;
+
+				while ($pos < $len)
+				{
+					$ch = $sql{$pos};
+					$pos++;
+
+					$buf .= $ch;
+					if ($ch == $chx) break;
+				}
+			}
+			else if ($ch == '@')
 			{
 				if ($pos >= $len) throw new Exception("Can't parse sql command: \"$sql\"");
 

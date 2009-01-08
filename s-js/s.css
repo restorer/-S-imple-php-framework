@@ -306,6 +306,8 @@
 
 .s-form td.s-form-error {
 	color: red;
+	font-weight: bold;
+	padding-bottom: 10px;
 }
 
 .s-form .s-form-error-info {
@@ -316,5 +318,6 @@
 
 .s-form td.s-form-info-msg {
 	color: blue;
+	font-weight: bold;
 	padding-bottom: 10px;
 }

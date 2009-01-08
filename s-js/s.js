@@ -632,6 +632,11 @@ S = function()
 			return '';
 		},
 
+		escape: function(str)
+		{
+			return escape(str).replace(/\+/g, '%2B');
+		},
+
 		call: function(method_path, params)
 		{
 			var spl = method_path.split('|');
@@ -639,7 +644,7 @@ S = function()
 			var method = spl[1].trim();
 
 			var args_str = ((typeof(params.args)!=$undef && params.args!==null) ? S.serialize(params.args) : '[]');
-			var data = '__s_ajax_method={0}&__s_ajax_args={1}'.format(escape(method), escape(args_str));
+			var data = '__s_ajax_method={0}&__s_ajax_args={1}'.format(S.escape(method), S.escape(args_str));
 
 			S.send(url, data, function(res)
 			{
