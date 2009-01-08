@@ -113,27 +113,27 @@
 }
 
 .s-tb-btn-hover .s-btn-before {
-	background: url(img/tb-btn-sprite.gif) 0 0 no-repeat;
+	background: url(img/toolbar-button.gif) 0 0 no-repeat;
 }
 
 .s-tb-btn-hover .s-btn-inner {
-	background: url(img/tb-btn-sprite.gif) 0 -42px repeat-x;
+	background: url(img/toolbar-button.gif) 0 -42px repeat-x;
 }
 
 .s-tb-btn-hover .s-btn-after {
-	background: url(img/tb-btn-sprite.gif) 0 -21px no-repeat;
+	background: url(img/toolbar-button.gif) 0 -21px no-repeat;
 }
 
 .s-tb-btn-pressed .s-btn-before {
-	background: url(img/tb-btn-sprite.gif) 0 -63px no-repeat;
+	background: url(img/toolbar-button.gif) 0 -63px no-repeat;
 }
 
 .s-tb-btn-pressed .s-btn-inner {
-	background: url(img/tb-btn-sprite.gif) 0 -105px repeat-x;
+	background: url(img/toolbar-button.gif) 0 -105px repeat-x;
 }
 
 .s-tb-btn-pressed .s-btn-after {
-	background: url(img/tb-btn-sprite.gif) 0 -84px no-repeat;
+	background: url(img/toolbar-button.gif) 0 -84px no-repeat;
 }
 
 /*
@@ -144,7 +144,7 @@
 	height: 21px;
 	line-height: 19px;
 	border: 1px solid #B5B8C8;
-	background: #FFF url(img/text-bg.gif) left top repeat-x;
+	background: #FFF url(img/input-bg.gif) left top repeat-x;
 	font-family: Tahoma, Arial;
 	font-size: 12px;
 	padding: 2px 2px 0 2px;
@@ -167,7 +167,7 @@
 .s-tlb {
 	width: 100%;
 	height: 26px;
-	background: #D0DEF0 url(img/bg.gif) left top repeat-x;
+	background: #D0DEF0 url(img/toolbar-bg.gif) left top repeat-x;
 	border-bottom: 1px solid #A9BFD3;
 	padding: 0 5px;
 }
@@ -190,9 +190,7 @@
 	background-color: #FFF;
 	font-family: Tahoma, Arial;
 	font-size: 12px;
-	border-top: 1px solid #EEEEEE;
-	border-left: 1px solid #EEEEEE;
-	border-right: 1px solid #EDEDED;
+	border: 1px solid #A9BFD3;
 }
 
 .s-nav th, .s-nav td {
@@ -204,7 +202,7 @@
 
 .s-nav th {
 	font-weight: normal;
-	background: #F9F9F9 url(img/grid3-hrow.gif) left top repeat-x;
+	background: #F9F9F9 url(img/nav-header-bg.gif) left top repeat-x;
 	vertical-align: middle;
 	white-space: nowrap;
 	border-left: 1px solid #EEEEEE;
@@ -232,7 +230,7 @@
 }
 
 .s-nav .s-nav-hover td {
-	background: #EFEFEF url(img/row-over.gif) left top repeat-x;
+	background: #EFEFEF url(img/nav-row-hover.gif) left top repeat-x;
 	border-top: 1px solid #DDD;
 	border-bottom: 1px solid #DDD;
 }
@@ -275,7 +273,7 @@
 	text-align: left;
 	white-space: nowrap;
 	font-weight: bold;
-	background: #99BBE8 url(img/top-bottom.gif) left top repeat-x;
+	background: #99BBE8 url(img/form-caption.gif) left top repeat-x;
 	border-left: 1px solid #99BBE8;
 	border-right: 1px solid #99BBE8;
 	padding: 0 5px;
@@ -314,4 +312,9 @@
 	color: red;
 	padding-top: 2px;
 	padding-bottom: 2px;
+}
+
+.s-form td.s-form-info-msg {
+	color: blue;
+	padding-bottom: 10px;
 }

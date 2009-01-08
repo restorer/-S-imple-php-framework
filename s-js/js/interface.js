@@ -419,13 +419,13 @@ SNavigator = function()
 
 		for (var i = 0; i < this._header.length; i++)
 		{
-			if (i == 0) {
-				res.push('<th class="s-nav-first">');
-			} else if (i == this._header.length-1) {
-				res.push('<th class="s-nav-last">');
-			} else {
-				res.push('<th>');
-			}
+			var th_cls = '';
+
+			if (i == 0) th_cls = (th_cls + ' s-nav-first').trim();
+			if (i == this._header.length-1) th_cls = (th_cls + ' s-nav-last').trim();
+
+			if (th_cls == '') res.push('<th>');
+			else res.push('<th class="{0}">'.format(td_cls));
 
 			res.push(this._header[i].title);
 			res.push('</th>');
@@ -440,13 +440,13 @@ SNavigator = function()
 
 			for (var j = 0; j < this._header.length; j++)
 			{
-				if (j == 0) {
-					res.push('<td class="s-nav-first">');
-				} else if (j == this._header.length-1) {
-					res.push('<td class="s-nav-last">');
-				} else {
-					res.push('<td>');
-				}
+				var td_cls = '';
+
+				if (j == 0) td_cls = (td_cls + ' s-nav-first').trim();
+				if (j == this._header.length-1) td_cls = (td_cls + ' s-nav-last').trim();
+
+				if (td_cls == '') res.push('<td>');
+				else res.push('<td class="{0}">'.format(td_cls));
 
 				var id = this._header[j].id;
 				res.push(typeof(data[id])==$undef ? '&nbsp;' : (String(data[id])=='' ? '&nbsp;' : String(data[id])));
@@ -499,6 +499,11 @@ SNavigator = function()
 			for (var i = 0; i < this._header.length; i++)
 			{
 				var td = S.create('TD');
+
+				var td_cls = '';
+
+				if (j == 0) S.add_class(td, 's-nav-first');
+				if (j == this._header.length-1) S.add_class(td, 's-nav-last');
 
 				var id = this._header[i].id;
 				td.innerHTML = (typeof(data[id])==$undef ? '&nbsp;' : (String(data[id])=='' ? '&nbsp;' : String(data[id])));

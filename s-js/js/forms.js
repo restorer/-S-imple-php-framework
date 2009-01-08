@@ -240,6 +240,8 @@ SForm = function()
 	this.error_tr = null;
 	this.error_td = null;
 	this.errors = {};
+	this.info_tr = null;
+	this.info_td = null;
 
 	this.init = function(form_data)
 	{
@@ -335,6 +337,12 @@ SForm = function()
 		this.error_td = S.create('TD', { colSpan:2, className:'s-form-error' });
 		this.error_tr.appendChild(this.error_td);
 
+		this.info_tr = S.create('TR', null, { display:'none' });
+		tbody.appendChild(this.info_tr);
+
+		this.info_td = S.create('TD', { colSpan:2, className:'s-form-info-msg' });
+		this.info_tr.appendChild(this.info_td);
+
 		for (var i = 0; i < this.rows.length; i++) this.rows[i].render(tbody);
 
 		this.buttons_row = S.create('TR');
@@ -408,6 +416,7 @@ SForm = function()
 	{
 		for (var i = 0; i < this.rows.length; i++) this.rows[i].set_value('');
 		this.clear_errors();
+		this.clear_info();
 	}
 
 	this.set_error = function(message)
@@ -435,5 +444,16 @@ SForm = function()
 
 		this.show_errors();
 		return (!this.has_errors());
+	}
+
+	this.set_info = function(info)
+	{
+		this.info_td.innerHTML = info;
+		this.info_tr.style.display = (info == '' ? 'none' : '');
+	}
+
+	this.clear_info = function()
+	{
+		this.set_info('');
 	}
 }

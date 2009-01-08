@@ -79,10 +79,21 @@ S = function()
 	var begin_request = [];
 	var end_request = [];
 
+	// thanks goes to http://www.json.org/json2.js, but here is more correct version (original version don't escape russian characters)
+	var json_escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0100-\uffff]/g;
+	var json_meta = { '\b':'\\b', '\t':'\\t', '\n':'\\n', '\f':'\\f', '\r':'\\r', '"' :'\\"', '\\':'\\\\' };
+
 	return {
 		error: function(msg)
 		{
 			alert('[Error occurred]\n\n' + msg);
+		},
+
+		dump: function(obj)
+		{
+			var str = '';
+			for (var k in obj) str += k + ': ' + obj[k] + '\n';
+			alert(str);
 		},
 
 		debug: function(msg)
@@ -562,6 +573,99 @@ S = function()
 			if (mask_el != null) {
 				mask_el.style.display = 'none';
 			}
+		},
+
+		deserialize: function(str)
+		{
+			return eval('(' + str + ')');
+		},
+
+		// thanks goes to http://www.json.org/json2.js
+		json_quote: function(str)
+		{
+			json_escapable.lastIndex = 0;
+
+			if (json_escapable.test(str))
+			{
+				return '"' + str.replace(json_escapable, function(val){
+					var ch = json_meta[val];
+					return (typeof(ch)=== 'string' ? ch : ('\\u' + ('0000' + val.charCodeAt(0).toString(16)).slice(-4)));
+				}) + '"';
+			}
+			else
+			{
+				return '"' + str + '"';
+			}
+		},
+
+		serialize: function(obj)
+		{
+			if (obj === null) return 'null';
+
+			switch (typeof(obj))
+			{
+				case 'function':
+					return 'null';
+
+				case 'string':
+					return S.json_quote(obj);
+
+				case 'number':
+					return (isFinite(obj) ? String(obj) : 'null');
+
+				case 'boolean':
+					return (obj ? 'true' : 'false');
+
+				case 'object':
+					if (Object.prototype.toString.apply(obj) === '[object Array]')
+					{
+						var res = [];
+						for (var i = 0; i < obj.length; i++) res.push(S.serialize(obj[i]));
+						return ('[' + res.join(',') + ']');
+					}
+
+					var res = [];
+					for (var k in obj) res.push("'" + S.js_encode(k) + "':" + S.serialize(obj[k]));
+					return ('{' + res.join(',') + '}');
+			}
+
+			return '';
+		},
+
+		call: function(method_path, params)
+		{
+			var spl = method_path.split('|');
+			var url = spl[0].trim();
+			var method = spl[1].trim();
+
+			var args_str = ((typeof(params.args)!=$undef && params.args!==null) ? S.serialize(params.args) : '[]');
+			var data = '__s_ajax_method={0}&__s_ajax_args={1}'.format(escape(method), escape(args_str));
+
+			S.send(url, data, function(res)
+			{
+				if (res!=null && res.indexOf('succ:')==0)
+				{
+					res = res.substr(5);
+					res = (res.length==0 ? null : S.deserialize(res));
+
+					if (typeof(params.succ) != $undef) params.succ(res);
+				}
+				else
+				{
+					if (res!=null && res.indexOf('fail:')==0) res = res.substr(5);
+
+					if (typeof(params.fail) != $undef) params.fail(res);
+					else S.alert('Error occurred' + (typeof(res)==null ? '' : '\n\n'+res));
+				}
+
+				if (typeof(params.last) != $undef) params.last();
+			});
+		},
+
+		alert: function(msg, callback)
+		{
+			alert(msg);
+			if (typeof(callback) != $undef) callback();
 		}
 	};
 }();
@@ -571,10 +675,9 @@ function $void() {}
 //
 // some_object.prototype sucks, multiple inheritance - rules
 //
-function $extend(th, base)
+function $extend(obj, base)
 {
-	var obj = new base();
-	for (var k in obj) th[k] = obj[k];
+	base.call(obj);
 }
 
 function $new(obj_class)
