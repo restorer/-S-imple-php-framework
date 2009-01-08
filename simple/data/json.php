@@ -10,9 +10,9 @@
 
 ##
 # .begin
-# = interface JsonSerializable
+# = interface SJsonSerializable
 ##
-interface JsonSerializable
+interface SJsonSerializable
 {
 	##
 	# = string json_serialize()
@@ -25,19 +25,34 @@ interface JsonSerializable
 
 ##
 # .begin
-# = static class Json
+# = static class SJson
 ##
-class Json
+class SJson
 {
 	public static $find = array('\\',   "'",  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
 	public static $repl = array('\\\\', "\'", '\/', '\b', '\f', '\n', '\r', '\t', '\u');
 
 	##
-	# = public static string serialize(mixed $obj)
-	# Note: it use single quote in strings, not doudle quotes as usual.
+	# = public static mixed deserialize(string $json_str)
+	# TODO: now it is just wrapper to buggy json_decode (in 5.2.6 version some things decoded really weird)
 	##
-	public static function serialize($obj)
+	public static function deserialize($json_str)
 	{
+		return json_decode($json_str, true);
+	}
+
+	##
+	# = public static string serialize(mixed $obj, bool $use_internal=false)
+	# [$obj] Object to serialize
+	# [$use_internal] Always use internal serializer, even if json_encode function availible
+	# Note: internal encoder use single-quoted strings instead of duuble-quoted in strings (sometimes it is better than valid json)
+	##
+	public static function serialize($obj, $use_internal=false)
+	{
+		if (!$use_internal && function_exists('json_encode')) {
+			return json_encode($obj);
+		}
+
 		if (is_string($obj))
 		{
 			return "'" . str_replace(self::$find, self::$repl, $obj) . "'";
@@ -78,7 +93,7 @@ class Json
 		}
 		elseif (is_object($obj))
 		{
-			if ($obj instanceof JsonSerializable) {
+			if ($obj instanceof SJsonSerializable) {
 				return $obj->json_serialize();
 			} else {
 				throw new Exception("Object doesn't implement JsonSerializable interface");
@@ -96,5 +111,5 @@ class Json
 
 function js_escape($str)
 {
-	return str_replace("</script>", "</'+'script>", str_replace(Json::$find, Json::$repl, $str));
+	return str_replace("</script>", "</'+'script>", str_replace(SJson::$find, SJson::$repl, $str));
 }
