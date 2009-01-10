@@ -27,11 +27,21 @@ SValidators = function()
 
 SFormRow = function()
 {
+	var avail_types = {};
+	avail_types['html'] = function(){ return $new(SHtmlElement, this.input.value); };
+	avail_types['text'] = function(){ return $new(SInput, this.type, '', this.input.value, this.params); };
+	avail_types['password'] = avail_types['text'];
+	avail_types['textarea'] = avail_types['text'];
+	avail_types['checkbox'] = function(){ return $new(SCheckBox, '', this.input.value, this.params); };
+
 	$extend(this, SClass);
 
 	this.id = '';
 	this.type = '';
 	this.width = 0;		// 0 - no width override
+	this.render_title = true;
+	this.params = {};
+	this.custom_type_func = null;
 	this.validate_when_hidden = false;
 
 	this.title = { element: null, value: '' };
@@ -39,9 +49,7 @@ SFormRow = function()
 	this.info =  { element: null, value: '' };
 	this.error = { element: null, value: '' };
 
-	this.params = {};
 	this.validators = [];
-
 	this.row_tr = null;
 	this.parent = null;
 
@@ -83,11 +91,8 @@ SFormRow = function()
 
 	this.get_value = function()
 	{
-		if (this.input.element != null)
-		{
-			if (this.type != 'label') {
-				this.input.value = this.input.element.get_value();
-			}
+		if (this.input.element != null) {
+			this.input.value = this.input.element.get_value();
 		}
 
 		return this.input.value;
@@ -97,18 +102,8 @@ SFormRow = function()
 	{
 		this.input.value = value;
 
-		if (this.input.element != null)
-		{
-			switch (this.type)
-			{
-				case 'label':
-					this.input.element.innerHTML = value;
-					break;
-
-				default:
-					this.input.element.set_value(value);
-					break;
-			}
+		if (this.input.element != null) {
+			this.input.element.set_value(value);
 		}
 	}
 
@@ -117,26 +112,38 @@ SFormRow = function()
 		this.row_tr = S.create('TR', { vAlign: 'top' });
 		container.appendChild(this.row_tr);
 
-		this.title.element = S.create('TH', { innerHTML: (this.title.value=='' ? '&nbsp;' : this.parent.encode(this.title.value) + ':') });
-		this.row_tr.appendChild(this.title.element);
+		if (this.render_title)
+		{
+			this.title.element = S.create('TH', { innerHTML: (this.title.value=='' ? '&nbsp;' : this.parent.encode(this.title.value) + ':') });
+			this.row_tr.appendChild(this.title.element);
+		}
 
 		var input_td = S.create('TD');
 		this.row_tr.appendChild(input_td);
 
-		switch (this.type)
-		{
-			case 'label':
-				this.input.element = S.create('DIV');
-				this.input.element.innerHTML = this.input.value;
-				input_td.appendChild(this.input.element);
-				if (this.width) this.input.element.style.width = this.width + 'px';
-				break;
+		if (!this.render_title) input_td.colSpan = 2;
 
-			default:
-				this.input.element = $new(SInput, this.type, '', this.input.value, this.params);
-				this.input.element.render(input_td);
-				if (this.width) this.input.element.dom().style.width = this.width + 'px';
-				break;
+		if (this.type == 'custom')
+		{
+			if (this.custom_type_func == null) {
+				throw new SException('custom_type_func is null');
+			}
+
+			this.input.element = this.custom_type_func.call(this);
+		}
+		else
+		{
+			if (typeof(avail_types[this.type]) == $undef) {
+				throw new SException('Unknown row type "{0}"', this.type);
+			}
+
+			this.input.element = avail_types[this.type].call(this);
+		}
+
+		this.input.element.render(input_td);
+
+		if (this.width && this.render_title) {
+			this.input.element.set_width(this.width);
 		}
 
 		this.info.element = S.create('SPAN',
@@ -196,7 +203,7 @@ SFormRow = function()
 	{
 		if (this.input.element != null)
 		{
-			if (this.type != 'label') {
+			if (this.type != 'html') {
 				S.rm_class(this.input.element.dom(), 's-form-error-el');
 			}
 		}
@@ -229,16 +236,19 @@ SFormRow = function()
 	{
 		this.width = width;
 
-		if (this.type == 'label') {
-			this.input.element.style.width = (width ? (width + 'px') : 'auto');
-		} else {
-			this.input.element.dom().style.width = (width ? (width + 'px') : 'auto');
+		if (this.render_title) {
+			this.input.element.set_width(width ? width : null);
 		}
 	}
 
 	this.can_clear = function()
 	{
-		return (this.type != 'label');
+		return (this.type != 'html');
+	}
+
+	this.set_custom_type_func = function(func)
+	{
+		this.custom_type_func = func;
 	}
 }
 
@@ -352,8 +362,9 @@ SForm = function()
 
 		row.id = row_data.id;
 		row.type = row_data.type;
-		row.params = (typeof(row_data.params) == $undef ? {} : row_data.params);
+		row.params = (typeof(row_data.params)==$undef ? {} : row_data.params);
 		row.width = this.fields_width;
+		row.render_title = (typeof(row_data.render_title)==$undef ? true : row_data.render_title);
 
 		if (typeof(row_data.title) != $undef) row.set_title(row_data.title);
 		if (typeof(row_data.info) != $undef) row.set_info(row_data.info);

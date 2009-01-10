@@ -7,6 +7,13 @@ SElement = function()
 	this._tmp = {};
 	this._in_render = false;
 
+	/*
+	 * _render_dom()
+	 * optional _update_dom()
+	 * get_value
+	 * set_value(value)
+	 */
+
 	this._tmp_get = function(key, def)
 	{
 		if (typeof(def) == $undef) def = null;
@@ -50,6 +57,13 @@ SElement = function()
 		return this._dom;
 	}
 
+	this.set_width = function(width)
+	{
+		if (this._dom !== null) {
+			this._dom.style.width = (width===null ? 'auto' : (String(width) + 'px'));
+		}
+	}
+
 	this._do_get = function(property)
 	{
 		return (this._dom===null ? this['_'+property] : this._dom[property]);
@@ -71,6 +85,35 @@ SElement = function()
 		}
 
 		this['_'+property] = value;
+	}
+}
+
+SHtmlElement = function()
+{
+	$extend(this, SElement);
+
+	this.text = '';
+
+	this.init = function(text)
+	{
+		this._text = ((typeof(text)==$undef || text===null) ? '' : String(text));
+	}
+
+	this._render_dom = function()
+	{
+		this._dom = S.create('DIV', { innerHTML: this._text });
+	}
+
+	this.get_value = function()
+	{
+		if (this._dom !== null) this._text = this._dom.innerHTML;
+		return this._text;
+	}
+
+	this.set_value = function(text)
+	{
+		this._text = text;
+		if (this._dom !== null) this._dom.innerHTML = text;
 	}
 }
 
@@ -284,6 +327,58 @@ SInput = function()
 	}
 };
 
+SCheckBox = function()
+{
+	$extend(this, SElement);
+
+	this._name = '';
+	this._value = '';
+	this._params = {};
+	this._dom_el = null;
+
+	this.init = function(name, value, params)
+	{
+		this._name = ((typeof(name)==$undef || name===null) ? '' : String(name));
+		this._value = ((typeof(value)==$undef || value===null) ? '' : String(value));
+		this._params = ((typeof(params)==$undef || params===null) ? {} : params);
+
+		if (typeof(this._params.checked_value) == $undef) this._params.checked_value = '1';
+		if (typeof(this._params.unchecked_value) == $undef) this._params.unchecked_value = '0';
+		if (typeof(this._params.title)==$undef || this._params.title===null) this._params.title = '';
+	}
+
+	this._render_dom = function()
+	{
+		var id = S._new_element_id();
+
+		var res = [
+			'<span class="s-chb">',
+			'<input type="checkbox" id="{0}" value="1" name="{1}" />'.format(id, this._name)
+		];
+
+		if (this._params.title != '') {
+			res.push('<label for="{0}>{1}</label>'.format(id, this._params.title));
+		}
+
+		res.push('<span>');
+
+		this._dom = S.build(res.join(''))[0];
+		this._dom_el = this._dom.childNodes[0];
+	}
+
+	this.get_value = function()
+	{
+		if (this._dom_el != null) this._value = (this._dom_el.checked ? this._params.checked_value : this._params.unchecked_value);
+		return this._value;
+	}
+
+	this.set_value = function(value)
+	{
+		this._value = value;
+		if (this._dom_el != null) this._dom_el.checked = (value==this._params.checked_value ? true : false);
+	}
+}
+
 SToolbar = function()
 {
 	$extend(this, SElement);
@@ -401,6 +496,7 @@ SNavigator = function()
 {
 	$extend(this, SElement);
 
+	this._id_field = 'id';
 	this._header = [];
 	this._rows = [];
 	this._rows_hash = {};
@@ -436,7 +532,7 @@ SNavigator = function()
 		for (var i = 0; i < this._rows.length; i++)
 		{
 			var data = this._rows[i].data;
-			res.push('<tr{0} __s_id="{1}">'.format((i%2==0 ? '' : ' class="s-nav-alt"'), S.html(String(data.id))));
+			res.push('<tr{0} __s_id="{1}">'.format((i%2==0 ? '' : ' class="s-nav-alt"'), S.html(String(data[this._id_field]))));
 
 			for (var j = 0; j < this._header.length; j++)
 			{
@@ -448,8 +544,11 @@ SNavigator = function()
 				if (td_cls == '') res.push('<td>');
 				else res.push('<td class="{0}">'.format(td_cls));
 
-				var id = this._header[j].id;
-				res.push(typeof(data[id])==$undef ? '&nbsp;' : (String(data[id])=='' ? '&nbsp;' : String(data[id])));
+				var hdr = this._header[j];
+				var fld = hdr.field;
+
+				var str = String(typeof(data[fld])==$undef ? '&nbsp;' : (typeof(hdr.format)==$undef ? data[fld] : hdr.format(data[fld], data)));
+				res.push(str=='' ? '&nbsp;' : str);
 
 				res.push('</td>');
 			}
@@ -472,13 +571,21 @@ SNavigator = function()
 	this._update_dom = function()
 	{
 		this._dom.__s_el = this;
-		var rows = this._dom.childNodes[0].childNodes;
+		var table_rows = this._dom.childNodes[0].childNodes;
 
-		for (var i = 1; i < rows.length; i++)
+		for (var i = 1; i < table_rows.length; i++)
 		{
-			this._rows[i-1].row = rows[i];
-			this._rows_hash[this._rows[i-1].data.id] = this._rows[i-1];
-			this._set_row_handlers(rows[i]);
+			var row = this._rows[i - 1];
+
+			row.dom = table_rows[i];
+			this._rows_hash[row.data[this._id_field]] = row;
+			this._set_row_handlers(table_rows[i]);
+
+			for (var j = 0; j < this._header.length; j++)
+			{
+				var hdr = this._header[j];
+				if (typeof(hdr.post_render) != $undef) hdr.post_render(rows[i].childNodes[j], row.data[hdr.field], row.data);
+			}
 		}
 
 		if (this._active_id != '') this.set_active_id(this._active_id);
@@ -491,10 +598,10 @@ SNavigator = function()
 		if (this._dom !== null)
 		{
 			var tr = S.create('TR');
-			tr.setAttribute('__s_id', data.id);
+			tr.setAttribute('__s_id', data[this._id_field]);
 
 			if (this._rows.length % 2 != 0) tr.className = 's-nav-alt';
-			if (this._active_id == data.id) tr.className += ' s-nav-act';
+			if (this._active_id == data[this._id_field]) tr.className += ' s-nav-act';
 
 			for (var i = 0; i < this._header.length; i++)
 			{
@@ -505,20 +612,25 @@ SNavigator = function()
 				if (i == 0) S.add_class(td, 's-nav-first');
 				if (i == this._header.length-1) S.add_class(td, 's-nav-last');
 
-				var id = this._header[i].id;
-				td.innerHTML = (typeof(data[id])==$undef ? '&nbsp;' : (String(data[id])=='' ? '&nbsp;' : String(data[id])));
+				var hdr = this._header[i];
+				var fld = hdr.field;
+
+				var str = String(typeof(data[fld])==$undef ? '&nbsp;' : (typeof(hdr.format)==$undef ? data[fld] : hdr.format(data[fld], data)));
+				td.innerHTML = (str=='' ? '&nbsp;' : str);
 
 				tr.appendChild(td);
+
+				if (typeof(hdr.post_render) != $undef) hdr.post_render(td, data[fld], data);
 			}
 
 			this._dom.childNodes[0].appendChild(tr);
 
-			item.row = tr;
+			item.dom = tr;
 			this._set_row_handlers(tr);
 		}
 
 		this._rows.push(item);
-		this._rows_hash[data.id] = item;
+		this._rows_hash[data[this._id_field]] = item;
 	}
 
 	this.append_rows = function(arr)
@@ -541,10 +653,10 @@ SNavigator = function()
 		{
 			for (var i = 0; i < this._rows.length; i++)
 			{
-				if (this._rows[i].data.id == id) {
-					S.add_class(this._rows[i].row, 's-nav-act');
+				if (this._rows[i].data[this._id_field] == id) {
+					S.add_class(this._rows[i].dom, 's-nav-act');
 				} else {
-					S.rm_class(this._rows[i].row, 's-nav-act');
+					S.rm_class(this._rows[i].dom, 's-nav-act');
 				}
 			}
 		}
@@ -553,6 +665,18 @@ SNavigator = function()
 	this.set_click_handler = function(click_handler)
 	{
 		this._click_handler = click_handler;
+	}
+
+	this.clear = function()
+	{
+		if (this._dom != null) {
+			for (var i = 0; i < this._rows.length; i++) {
+				this._dom.childNodes[0].removeChild(this._rows[i].dom);
+			}
+		}
+
+		this._rows = [];
+		this._rows_hash = {};
 	}
 };
 

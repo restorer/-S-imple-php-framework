@@ -92,6 +92,7 @@ class SPage
 	# = void __construct()
 	# Don't forget to call parent constructor in your page
 	##
+	// ' fix mc highlighter
 	function __construct()
 	{
 		$this->_start_time = get_microtime();

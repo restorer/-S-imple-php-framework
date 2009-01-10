@@ -17,7 +17,7 @@ Array.prototype.to_hash = function()
 
 //
 // collect is NOT same as collect in ruby (which is equal to map)
-// this collect is like reject from fuby
+// this collect is opposite to reject from fuby
 //
 Array.prototype.collect = function(func)
 {
@@ -74,6 +74,7 @@ S = function()
 	var get_xmlhttp_code = null;
 	var debug_el = null;
 	var mask_el = null;
+	var element_cnt = 0;
 
 	var require_path = '';
 	var begin_request = [];
@@ -486,7 +487,7 @@ S = function()
 							return ((window.innerHeight && window.scrollMaxY) ? (window.innerHeight + window.scrollMaxY) : ((document.body.scrollHeight > document.body.offsetHeight) ? document.body.scrollHeight : document.body.offsetHeight));
 						}
 					}
-				}
+				}()
 			};
 		}(),
 
@@ -566,6 +567,8 @@ S = function()
 			{
 				mask_el.style.display = '';
 			}
+
+			mask_el.style.height = S.info.page.height() + 'px';
 		},
 
 		unmask: function()
@@ -671,6 +674,12 @@ S = function()
 		{
 			alert(msg);
 			if (typeof(callback) != $undef) callback();
+		},
+
+		_new_element_id: function()
+		{
+			element_cnt++;
+			return ('s-' + element_cnt);
 		}
 	};
 }();
