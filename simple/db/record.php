@@ -579,9 +579,9 @@ class SRecord extends SEntity
 		$keyname = $this->_db_key;
 
 		$cmd = new SDBCommand("DELETE FROM @_db_table WHERE @_f_id=@id");
-		$cmd->add('_db_table', $this->_db_table, SDB::TableName);
-		$cmd->add('_f_id', $this->_db_key, SDB::FieldName);
-		$cmd->add('id', $this->$keyname, SDB::Int);
+		$cmd->set('_db_table', $this->_db_table, SDB::TableName);
+		$cmd->set('_f_id', $this->_db_key, SDB::FieldName);
+		$cmd->set('id', $this->$keyname, SDB::Int);
 
 		$cmd->execute();
 		$this->_process_filters(SRECORD_FILTER_AFTER_REMOVE);

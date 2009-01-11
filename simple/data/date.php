@@ -16,6 +16,8 @@ class SDate
 {
 	public static $ru_months_short = array('дек.', 'янв.', 'фев.', 'мар.', 'апр.', 'мая', 'июня', 'июля', 'авг.', 'сен.', 'окт.', 'ноя.', 'дек.');
 	public static $ru_months_full = array('декабря', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря');
+	public static $en_months_short = array('Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
+	public static $en_months_full = array('December', 'January', 'Febrary', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
 
 	public static function parse($str_date)
 	{
@@ -44,6 +46,14 @@ class SDate
 
 			case 'ru-full':
 				return ($day . ' ' . self::$ru_months_full[$mon] . ' ' . $year . ' г.');
+				break;
+
+			case 'en-short':
+				return (self::$en_months_short[$mon] . ' ' . $day . ', ' . $year);
+				break;
+
+			case 'en-full':
+				return (self::$en_months_full[$mon] . ' ' . $day . ', ' . $year);
 				break;
 
 			default:

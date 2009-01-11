@@ -76,14 +76,26 @@
 }
 
 .s-btn-pressed .s-btn-before {
-	background-position: 0 -147px;
+	background-position: 0 -63px;
 }
 
 .s-btn-pressed .s-btn-inner {
-	background-position: 0 -189px;
+	background-position: 0 -126px;
 }
 
 .s-btn-pressed .s-btn-after {
+	background-position: 0 -84px;
+}
+
+.s-btn-focus .s-btn-before {
+	background-position: 0 -147px;
+}
+
+.s-btn-focus .s-btn-inner {
+	background-position: 0 -189px;
+}
+
+.s-btn-focus .s-btn-after {
 	background-position: 0 -168px;
 }
 
@@ -159,6 +171,49 @@
 	height: auto;
 }
 
+.s-inp-form {
+	margin: 0;
+	padding: 0;
+}
+
+/*
+ * InputFile
+ */
+
+.s-inp-file-cont {
+	position: relative;
+	height: 21px;
+	display: inline-block;
+	_display: inline;
+	zoom: 1;
+}
+
+.s-inp-file-label {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 21px;
+	display: block;
+	overflow: hidden;
+	cursor: pointer;
+}
+
+.s-inp-file-input {
+    position: relative;
+	z-index: 20;
+    height: 100%;
+    width: auto;
+    opacity: 0;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);
+}
+
+.s-inp-file-text {
+	white-space: nowrap;
+	padding-left: 5px;
+	vertical-align: -2px;
+}
+
 /*
  * CheckBox
  */
@@ -167,7 +222,6 @@
 	vertical-align: 2px;
 	padding-left: 5px;
 }
-
 
 /*
  * Toolbar
@@ -267,7 +321,7 @@
 }
 
 /*
- * Form
+ * FormView
  */
 
 .s-form {
@@ -330,6 +384,45 @@
 	padding-bottom: 10px;
 }
 
+.s-form-first th,
+.s-form-first td {
+	padding-top: 15px;
+}
+
+.s-form-buttons td {
+	padding-bottom: 15px;
+}
+
 .s-form table td {
 	padding: 0;
+}
+
+/*
+ * DateSelector
+ */
+
+.s-date td {
+	padding: 0;
+}
+
+.s-date .s-date-inp {
+	width: 100%;
+}
+
+.s-date .s-date-inp input {
+	width: 100%;
+}
+
+.s-date .s-date-btn {
+	padding-left: 5px;
+}
+
+/*
+ * PopupLayer
+ */
+
+.s-pop {
+	position: absolute;
+	background-color: #FFF;
+	border: 1px solid #99BBE8;
 }

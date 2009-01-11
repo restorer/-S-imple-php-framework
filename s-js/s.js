@@ -1,6 +1,79 @@
 $undef = 'undefined';
 $func = 'function';
 
+Number.prototype.format = function(format)
+{
+	format = String(format).trim();
+	if (format == '') return this.toString();
+
+	var type = (format.match(/[a-zA-Z]+/) || '');
+	if (type == '') return this.toString();
+
+	var disp_sign = (format.charAt(0) == '+');
+	var int_pad = (/^[\+]?[0]/.test(format) ? '0' : ' ');
+	var int_sz = Number((format.match(/^[\+]?[0]*([0-9]+)/) || [0, -1])[1]);
+	var frac_pad = (format.match(/^[^\.]*\.([0 ])/) || ['', ''])[1];
+	var frac_sz = Number((format.match(/^[^\.]*\.[0 ]*([0-9]+)/) || [0, -1])[1]);
+
+	var res;
+
+	switch (format)
+	{
+		case 'b':
+			res = this.toString(2);
+			break;
+
+		case 'o':
+			res = this.toString(8);
+			break;
+
+		case 'x':
+			res = this.toString(16).toLowerCase();
+			break;
+
+		case 'X':
+			res = this.toString(16).toUpperCase();
+			break;
+
+		default:
+			res = this.toString();
+	}
+
+	var sign_str = (res.match(/^[\-]/) || '+');
+	var int_str = (res.match(/^[\-]?([^\.]+)/) || ['', '0'])[1];
+	var frac_str = (res.match(/[^\.]*\.(.+)/) || ['', ''])[2];
+
+	var res = ((disp_sign || sign_str=='-') ? sign_str : '');
+
+	if (int_sz>0 && int_str.length<int_sz) {
+		while (int_str.length < int_sz) {
+			int_str = int_pad + int_str;
+		}
+	}
+
+	res += int_str;
+
+	if (frac_str!='' && frac_sz>0)
+	{
+		res += '.';
+
+		if (frac_str.length > frac_sz)
+		{
+			frac_str = frac_str.substring(0, frac_sz);
+		}
+		else if (frac_str.length<frac_sz && frac_pad!='')
+		{
+			while (frac_str.length < frac_sz) {
+				frac_str += frac_pad;
+			}
+		}
+
+		res += frac_str;
+	}
+
+	return res;
+}
+
 Array.prototype.map = function(func)
 {
 	var res = [];
@@ -13,6 +86,15 @@ Array.prototype.to_hash = function()
 	var res = {};
 	for (var i = 0; i < this.length; i++) res[this[i]] = true;
 	return res;
+}
+
+Array.prototype.append = function(arr)
+{
+	for (var i = 0; i < arr.length; i++) {
+		this.push(arr[i]);
+	}
+
+	return this;
 }
 
 //
@@ -63,6 +145,34 @@ String.prototype.rtrim = function(str)
 	return this.replace(/\s\s*$/, '');
 }
 
+SL = function()
+{
+	var current_locale = 'en';
+	var strings = {};
+
+	return {
+		get: function(key)
+		{
+			if (typeof(strings[current_locale]) == $undef) return key;
+			if (typeof(strings[current_locale][key]) == $undef) return key;
+			return strings[current_locale][key];
+		},
+
+		set: function(key, value, locale)
+		{
+			if (typeof(locale) == $undef) locale = current_locale;
+
+			if (typeof(strings[locale]) == $undef) strings[locale] = {};
+			strings[locale][key] = value;
+		},
+
+		set_locale: function(locale)
+		{
+			current_locale = locale;
+		}
+	};
+}();
+
 S = function()
 {
 	var MAX_TRIES = 8;
@@ -85,9 +195,11 @@ S = function()
 	var json_meta = { '\b':'\\b', '\t':'\\t', '\n':'\\n', '\f':'\\f', '\r':'\\r', '"' :'\\"', '\\':'\\\\' };
 
 	return {
+		is_ie: (document.all && !window.opera),
+
 		error: function(msg)
 		{
-			alert('[Error occurred]\n\n' + msg);
+			alert('[' + SL.get('s/error_occurred') + ']\n\n' + msg);
 		},
 
 		dump: function(obj)
@@ -186,7 +298,7 @@ S = function()
 
 			if (req===null || req===false)
 			{
-				S.error('Unable find XMLHttpRequest or it ActiveX alalog.');
+				S.error(SL.get('s/no_xmlhttp'));
 				return null;
 			}
 
@@ -278,7 +390,7 @@ S = function()
 					if (_try_num < _MAX_TRIES) {
 						S.send(url, data, callback_func, _try_num+1);
 					} else {
-						S.error('Error sending request to "{0}": {1}\n{2}'.format(url, req.status, req.responseText));
+						S.error(SL.get('s/error_sending').format(url, req.status, req.responseText));
 					}
 				}
 				else
@@ -288,7 +400,7 @@ S = function()
 			}
 			catch (ex)
 			{
-				S.error('Internal error while sending request to "{0}"'.format(url));
+				S.error(SL.get('s/internal_error_sending').format(url));
 			}
 
 			return null;
@@ -352,7 +464,7 @@ S = function()
 			{
 				if (script_text == null)
 				{
-					S.error('Script "{0}" not found'.format(require_path + script_url));
+					S.error(SL.get('s/script_not_found').format(require_path + script_url));
 
 					var callbacks = already_required_files[script_url];
 					for (var i = 0; i < callbacks.length; i++) callbacks[i](false);
@@ -381,7 +493,7 @@ S = function()
 					}
 					catch (ex)
 					{
-						S.error('Can\'t include script "{0}". Probably error in script or HEAD tag is missing.'.format(script_url));
+						S.error(SL.get('s/cant_include_script').format(script_url));
 
 						var callbacks = already_required_files[script_url];
 						for (var i = 0; i < callbacks.length; i++) callbacks[i](false);
@@ -447,7 +559,12 @@ S = function()
 
 		html: function(str)
 		{
-			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+		},
+
+		unhtml: function(str)
+		{
+			return str.replace(/&quot;/g, '"').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
 		},
 
 		current_style: function(el, prop)
@@ -663,7 +780,7 @@ S = function()
 					if (res!=null && res.indexOf('fail:')==0) res = res.substr(5);
 
 					if (typeof(params.fail) != $undef) params.fail(res);
-					else S.alert('Error occurred' + (typeof(res)==null ? '' : '\n\n'+res));
+					else S.alert(SL.get('s/error_occurred') + (typeof(res)==null ? '' : '\n\n'+res));
 				}
 
 				if (typeof(params.last) != $undef) params.last();
@@ -676,10 +793,102 @@ S = function()
 			if (typeof(callback) != $undef) callback();
 		},
 
+		confirm: function(msg, params)
+		{
+			if (confirm(msg)) {
+				if (typeof(params.succ) != $undef) params.succ();
+			} else {
+				if (typeof(params.fail) != $undef) params.fail();
+			}
+
+			if (typeof(params.last) != $undef) params.last();
+		},
+
 		_new_element_id: function()
 		{
 			element_cnt++;
 			return ('s-' + element_cnt);
+		},
+
+		background_submit: function(form, url, params)
+		{
+			var frame_id = S._new_element_id();
+			var frame_el = S.create('IFRAME', { id:frame_id, name:frame_id }, { display:'none' });
+			if (S.is_ie) frame_el.src = 'javascript:false';	// taken from ExtJS
+			document.body.appendChild(frame_el);
+			if (S.is_ie) document.frames[frame_id].name = frame_id;	// taken from ExtJS
+
+			function on_frame_loaded()
+			{
+				var res = '';
+				var ex;
+
+				try {
+					res = (S.is_ie ? frame_el.contentWindow.document : frame_el.contentDocument).body.innerHTML;
+				} catch (ex) {}
+
+				if (typeof(params.callback) != $undef)
+				{
+					params.callback(res);
+				}
+				else
+				{
+					if (res.indexOf('succ:') == 0)
+					{
+						res = res.substr(5);
+						res = (res.length==0 ? null : S.deserialize(res));
+
+						if (typeof(params.succ) != $undef) params.succ(res);
+					}
+					else
+					{
+						if (res.indexOf('fail:') == 0) res = res.substr(5);
+
+						if (typeof(params.fail) != $undef) params.fail(res);
+						else S.alert(SL.get('s/error_occurred') + (typeof(res)==null ? '' : '\n\n'+res));
+					}
+
+					if (typeof(params.last) != $undef) params.last();
+				}
+
+				S.rm_handler(frame_el, 'load', on_frame_loaded);
+				setTimeout(function(){ document.body.removeChild(frame_el); }, 1);
+			}
+
+			form.action = url;
+			form.target = frame_id;
+			S.add_handler(frame_el, 'load', on_frame_loaded);
+			form.submit();
+		},
+
+		// thanks goes to http://javascript.nwbox.com/cursor_position/
+		get_selection_start: function(el)
+		{
+			if (el.createTextRange)
+			{
+				var rng = document.selection.createRange().duplicate();
+				rng.moveEnd('character', el.value.length);
+				return (rng.text=='' ? el.value.length : el.value.lastIndexOf(rng.text));
+			}
+			else
+			{
+				return el.selectionStart;
+			}
+		},
+
+		// thanks goes to http://javascript.nwbox.com/cursor_position/
+		get_selection_end: function(el)
+		{
+			if (el.createTextRange)
+			{
+				var rng = document.selection.createRange().duplicate()
+				rng.moveStart('character', -el.value.length)
+				return rng.text.length;
+			}
+			else
+			{
+				return el.selectionEnd;
+			}
 		}
 	};
 }();
@@ -721,8 +930,9 @@ function SClass()
 
 		return function(_event)
 		{
-			if (typeof(event) == 'undefined') event = _event;
-			return _func.apply(_this, _args);
+			var args = [typeof(_event)==$undef ? event : _event];
+			for (var i = 0; i < _args.length; i++) args.push(_args[i]);
+			return _func.apply(_this, args);
 		};
 	}
 
@@ -762,3 +972,21 @@ function SException()
 		if (typeof(message) != $undef) this.message = message;
 	}
 }
+
+/*
+ * Locales
+ */
+
+SL.set('s/error_occurred', 'Error occurred', 'en');
+SL.set('s/no_xmlhttp', 'Unable find XMLHttpRequest or it ActiveX alalog.', 'en');
+SL.set('s/error_sending', 'Error sending request to "{0}": {1}\n{2}', 'en');
+SL.set('s/internal_error_sending', 'Internal error while sending request to "{0}"', 'en');
+SL.set('s/script_not_found', 'Script "{0}" not found', 'en');
+SL.set('s/cant_include_script', 'Can\'t include script "{0}". Probably error in script or HEAD tag is missing.', 'en');
+
+SL.set('s/error_occurred', 'Произошла ошибка', 'ru');
+SL.set('s/no_xmlhttp', 'Ваш браузер не поддерживает технологию XMLHttpRequest и её ActiveX аналог.', 'ru');
+SL.set('s/error_sending', 'Произошла ошибка при отправлении данных в "{0}": {1}\n{2}', 'ru');
+SL.set('s/internal_error_sending', 'Произошла внутренняя ошибка при отправлении данных в "{0}"', 'ru');
+SL.set('s/script_not_found', 'Скрипт "{0}" не найден', 'ru');
+SL.set('s/cant_include_script', 'Произошла ошибка при подключении скрипта  "{0}". Возможно отсутствует тэг HEAD.', 'ru');
