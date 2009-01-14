@@ -627,7 +627,7 @@ SNavigator = function()
 			if (th_cls == '') res.push('<th>');
 			else res.push('<th class="{0}">'.format(td_cls));
 
-			res.push(this._header[i].title);
+			res.push(this._header[i].title.length ? this._header[i].title : '&nbsp;');
 			res.push('</th>');
 		}
 
@@ -749,6 +749,11 @@ SNavigator = function()
 		return (typeof(this._rows_hash[id])==$undef ? null : this._rows_hash[id].data);
 	}
 
+	this.get_data_by_ind = function(ind)
+	{
+		return (typeof(this._rows[ind])==$undef ? null : this._rows[ind].data);
+	}
+
 	this.set_row_data = function(id, data)
 	{
 		if (typeof(this._rows_hash[id]) == $undef) return;
@@ -800,6 +805,11 @@ SNavigator = function()
 
 		this._rows = [];
 		this._rows_hash = {};
+	}
+
+	this.get_rows_count = function()
+	{
+		return this._rows.length;
 	}
 };
 

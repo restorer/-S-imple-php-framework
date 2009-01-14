@@ -31,6 +31,11 @@ SValidators = function()
 		{
 			var val = Number(value);
 			return ( (val>=min_value && val<=max_value) ? '' : SL.get('forms/validators/number_range').format(min_value, max_value) );
+		},
+
+		regex: function(value, form, re, msg)
+		{
+			return (re.test(value) ? '' : msg);
 		}
 	};
 }();
@@ -143,7 +148,7 @@ SFormRow = function()
 		if (this.type == 'custom')
 		{
 			if (this.custom_func == null) {
-				throw new SException('custom_func is null');
+				throw $new(SException, 'custom_func is null');
 			}
 
 			this.input.element = this.custom_func.call(this);
@@ -151,7 +156,7 @@ SFormRow = function()
 		else
 		{
 			if (typeof(avail_types[this.type]) == $undef) {
-				throw new SException('Unknown row type "{0}"', this.type);
+				throw $new(SException, 'Unknown row type "{0}"'.format(this.type));
 			}
 
 			this.input.element = avail_types[this.type].call(this);
@@ -285,6 +290,11 @@ SFormRow = function()
 	this.disable_validation = function()
 	{
 		this.validation_enabled = false;
+	}
+
+	this.set_title_class = function(cls)
+	{
+		this.title.element.className = cls;
 	}
 }
 

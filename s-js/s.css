@@ -6,7 +6,7 @@
 	z-index: 90000;
 	background-color: #000;
 	opacity: .5;
-	filter: Alpha(Opacity=50);
+	filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50);
 }
 
 /*

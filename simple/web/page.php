@@ -300,7 +300,7 @@ class SPage
 					{
 						$this->_uploaded_files[$k] = UPLOAD_ERR_OK;
 						$this->vars[$k] = '_uploaded_file_';
-						$this->vars[$k.':name'] = $v['name'];
+						$this->vars[$k.':name'] = preg_replace('@[\\\\/\\*]@', '', $v['name']);
 						$this->vars[$k.':type'] = $v['type'];
 						$this->vars[$k.':size'] = $v['size'];
 						$this->vars[$k.':tmp_name'] = $v['tmp_name'];

@@ -412,14 +412,22 @@ abstract class SDBBase
 
 	##
 	# = public string quote_like(string $str)
+	# Escape string to use in like expressions (additionally escapes '%' and '_' symbols)
+	# **TODO:** Check escaping method in sqlite
+	##
+	public function escape_like($str)
+	{
+		return str_replace(array('%', '_'), array('\\%', '\\_'), $str);
+	}
+
+	##
+	# = public string quote_like(string $str)
 	# Quote (and escape) string to use in like expressions (additionally escapes '%' and '_' symbols)
 	# **TODO:** Check escaping method in sqlite
 	##
 	public function quote_like($str)
 	{
-		$str = $this->quote($str);
-		$str = str_replace(array('%', '_'), array('\\%', '\\_'), $str);
-		return $str;
+		return $this->quote($this->escape_like($str));
 	}
 
 	##

@@ -559,11 +559,13 @@ S = function()
 
 		html: function(str)
 		{
+			if (typeof(str) == $undef) throw $new(SException, 'str is undefined');
 			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 		},
 
 		unhtml: function(str)
 		{
+			if (typeof(str) == $undef) throw $new(SException, 'str is undefined');
 			return str.replace(/&quot;/g, '"').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
 		},
 
@@ -889,9 +891,22 @@ S = function()
 			{
 				return el.selectionEnd;
 			}
+		},
+
+		_handle_errors: function(msg, url, line)
+		{
+			if (url=='' && line==0) {
+				S.error(msg);
+			} else {
+				S.error('{0}\n{1}:{2}\n\n{3}'.format(msg, url, line, (typeof(__s_trace)==$undef ? '' : __s_trace.join('\n'))));
+			}
+
+			return false;
 		}
 	};
 }();
+
+window.onerror = S._handle_errors;
 
 function $void() {}
 
@@ -966,11 +981,103 @@ function SException()
 	$extend(this, SClass);
 
 	this.message = '';
+	this.stack = [];
 
 	this.init = function(message)
 	{
+		this.stack = SException.get_stack_trace().slice(1);
 		if (typeof(message) != $undef) this.message = message;
 	}
+
+	this.toString = function()
+	{
+		return '"' + this.message + '"\n\n' + this.stack.join('\n') + '\n';
+	}
+}
+
+// thanks goes to http://eriwen.com/javascript/js-stack-trace/ and http://pastie.org/253058.txt
+SException.get_stack_trace = function()
+{
+	var ex;
+
+	try
+	{
+		(0)();
+	}
+	catch (ex)
+	{
+		if (ex.stack)
+		{
+			var lines = ex.stack.split('\n').slice(1);
+			if (lines.length>0 && lines[lines.length-1].length==0) lines = lines.slice(0, lines.length-1);
+
+			for (var i = 0; i < lines.length; i++)
+			{
+				var ind = lines[i].lastIndexOf('@');
+				if (ind <= 0) continue;
+
+				var args = lines[i].substr(0, ind);
+				var where = lines[i].substr(ind + 1);
+
+				if (args.charAt(0) == '(') args = '{anonymous}' + args;
+
+				lines[i] = where + ' at ' + args;
+			}
+
+			return lines;
+		}
+		else if (window.opera)
+		{
+			var lines = e.message.split('\n');
+			var re = /Line\s+(\d+).*?in\s+(http\S+)(?:.*?in\s+function\s+(\S+))?/i;
+			var i, j, len;
+
+			for (i=4, j=0, len=lines.length; i < len; i += 2) {
+				if (re.test(lines[i])) {
+                    lines[j++] = (RegExp.$3 ? (RegExp.$3 + '()@' + RegExp.$2 + RegExp.$1) : ('{anonymous}' + RegExp.$2 + ':' + RegExp.$1)) + ' -- ' + lines[i+1].replace(/^\s+/, '');
+                }
+            }
+
+			lines.splice(j, lines.length - j);
+			return lines;
+		}
+		else
+		{
+			var curr = arguments.callee.caller;
+			var re = /function\s*([\w\-$]+)?\s*\(/i;
+			var stack = [];
+			var j = 0;
+			var fn, args, i;
+
+			while (curr)
+			{
+				fn = (re.test(curr.toString()) ? (RegExp.$1 || '{anonymous}') : '{anonymous}');
+				args = stack.slice.call(curr.arguments);
+				i = args.length;
+
+				while (i--)
+				{
+					switch (typeof args[i])
+					{
+						case 'string':
+							args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';
+							break;
+
+						case 'function':
+							args[i] = 'function';
+							break;
+					}
+				}
+
+				stack[j++] = fn + '(' + args.join() + ')';
+				curr = curr.caller;
+			}
+
+			return stack;
+		}
+	}
+
+	return ['ERROR'];
 }
 
 /*
