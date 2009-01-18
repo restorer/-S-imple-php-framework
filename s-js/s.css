@@ -249,23 +249,53 @@
  */
 
 .s-nav {
-	width: 100%;
 	background-color: #FFF;
-	font-family: Tahoma, Arial;
-	font-size: 12px;
 	border: 1px solid #A9BFD3;
+	position: relative;
 }
 
-.s-nav th, .s-nav td {
+.s-nav .s-nav-hdr {
+	position: absolute;
+	top: 0;
+	_top: 1px;
+	left: 0;
+	height: 24px;
+}
+
+.s-nav .s-nav-hdr div {
+	position: absolute;
+	top: 0;
+	font-family: Tahoma, Arial;
+	font-size: 12px;
+	background: #F9F9F9 url(img/nav-header-bg.gif) left top repeat-x;
+	white-space: nowrap;
+	border-left: 1px solid #EEEEEE;
+	border-right: 1px solid #D0D0D0;
+	border-bottom: 1px solid #D0D0D0;
+	padding: 4px 5px 0 5px;
+	height: 19px;
+	_height: 24px;
+}
+
+.s-nav .s-nav-wrap {
+	overflow: auto;
+}
+
+.s-nav-wrap .s-nav-tbl {
+	width: 100%;
+	font-family: Tahoma, Arial;
+	font-size: 12px;
+}
+
+.s-nav-tbl th, .s-nav-tbl td {
 	height: 24px;
 	text-align: left;
 	padding: 0 5px;
 	color: #000;
 }
 
-.s-nav th {
+.s-nav-tbl th {
 	font-weight: normal;
-	background: #F9F9F9 url(img/nav-header-bg.gif) left top repeat-x;
 	vertical-align: middle;
 	white-space: nowrap;
 	border-left: 1px solid #EEEEEE;
@@ -273,50 +303,57 @@
 	border-bottom: 1px solid #D0D0D0;
 }
 
-.s-nav td {
+.s-nav-tbl td {
 	border-top: 1px solid #FFFFFF;
 	border-bottom: 1px solid #EDEDED;
 	cursor: pointer;
 	cursor: hand;
 }
 
-.s-nav td.s-nav-first {
+.s-nav-tbl td.s-nav-first {
 	border-left: 1px solid #FFFFFF;
 }
 
-.s-nav td.s-nav-last {
+.s-nav-tbl td.s-nav-last {
 	border-right: 1px solid #EDEDED;
 }
 
-.s-nav .s-nav-alt {
+.s-nav-tbl .s-nav-alt {
 	background-color: #FAFAFA;
 }
 
-.s-nav .s-nav-hover td {
+.s-nav-tbl .s-nav-empty td {
+	color: #888;
+	text-align: center;
+	border: none;
+	cursor: default;
+}
+
+.s-nav-tbl .s-nav-hover td {
 	background: #EFEFEF url(img/nav-row-hover.gif) left top repeat-x;
 	border-top: 1px solid #DDD;
 	border-bottom: 1px solid #DDD;
 }
 
-.s-nav .s-nav-hover td.s-nav-first {
+.s-nav-tbl .s-nav-hover td.s-nav-first {
 	border-left: 1px solid #DDD;
 }
 
-.s-nav .s-nav-hover td.s-nav-last {
+.s-nav-tbl .s-nav-hover td.s-nav-last {
 	border-right: 1px solid #DDD;
 }
 
-.s-nav .s-nav-act td {
+.s-nav-tbl .s-nav-act td {
 	background: #DFE8F6;
 	border-top: 1px dotted #A3BAE9;
 	border-bottom: 1px dotted #A3BAE9;
 }
 
-.s-nav .s-nav-act td.s-nav-first {
+.s-nav-tbl .s-nav-act td.s-nav-first {
 	border-left: 1px dotted #A3BAE9;
 }
 
-.s-nav .s-nav-act td.s-nav-last {
+.s-nav-tbl .s-nav-act td.s-nav-last {
 	border-right: 1px dotted #A3BAE9;
 }
 
@@ -425,4 +462,5 @@
 	position: absolute;
 	background-color: #FFF;
 	border: 1px solid #99BBE8;
+	z-index: 1000;
 }

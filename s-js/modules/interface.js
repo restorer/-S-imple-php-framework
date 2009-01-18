@@ -1,6 +1,8 @@
 SL.set('interface/select_file', 'Select file ...', 'en');
+SL.set('interface/navigator/empty-text', 'No items to display', 'en');
 
 SL.set('interface/select_file', 'Выбрать файл ...', 'ru');
+SL.set('interface/navigator/empty-text', 'Пусто', 'ru');
 
 SElement = function()
 {
@@ -26,6 +28,8 @@ SElement = function()
 
 	this.render = function(container)
 	{
+		if (container === null) throw $new(SException, 'container is null');
+
 		this._in_render = true;
 
 		if (this._dom === null)
@@ -461,7 +465,7 @@ SCheckBox = function()
 		];
 
 		if (this._params.title != '') {
-			res.push('<label for="{0}>{1}</label>'.format(id, this._params.title));
+			res.push('<label for="{0}">{1}</label>'.format(id, this._params.title));
 		}
 
 		res.push('<span>');
@@ -603,19 +607,48 @@ SNavigator = function()
 	this._id_field = 'id';
 	this._header = [];
 	this._rows = [];
-	this._rows_hash = {};
 	this._active_id = '';
 	this._click_handler = null;
+	this._max_height = 0;
+	this._fixed_height = 0;
 
-	this.init = function(header, click_handler)
+	this._rows_hash = {};
+	this._row_header = null;
+	this._row_empty = null;
+	this._div_header = null;
+	this._tbody = null;
+
+	/*
+	 * (max_height==0 && fixed_height==true) has no sense
+	 * (max_height>0 && fixed_height==false) may incorretly work under IE
+	 */
+	this.init = function(header, click_handler, max_height, fixed_height)
 	{
 		this._header = header;
 		this._click_handler = (typeof(click_handler)==$undef ? null : click_handler);
+		this._max_height = ((typeof(max_height)==$undef || max_height==null) ? 0 : max_height);
+		this._fixed_height = ((typeof(fixed_height)==$undef || fixed_height==null) ? false : fixed_height);
 	}
 
 	this._render_dom = function()
 	{
-		var res = ['<table cellspacing="0" cellpadding="0" class="s-nav">','<tr>'];
+		var st = '';
+
+		if (this._max_height)
+		{
+			if (this._fixed_height) {
+				st = ' style="height:{0}px"'.format(this._max_height);
+			} else {
+				st = ' style="max-height:{0}px;_height:{0}px"'.format(this._max_height);
+			}
+		}
+
+		var res = [
+			'<div class="s-nav">',
+			'<div class="s-nav-wrap"{0}>'.format(st),
+			'<table cellspacing="0" cellpadding="0" class="s-nav-tbl">',
+			'<tr>'
+		];
 
 		for (var i = 0; i < this._header.length; i++)
 		{
@@ -624,13 +657,15 @@ SNavigator = function()
 			if (i == 0) th_cls = (th_cls + ' s-nav-first').trim();
 			if (i == this._header.length-1) th_cls = (th_cls + ' s-nav-last').trim();
 
-			if (th_cls == '') res.push('<th>');
-			else res.push('<th class="{0}">'.format(td_cls));
-
+			res.push(th_cls=='' ? '<th>' : '<th class="{0}">'.format(td_cls));
 			res.push(this._header[i].title.length ? this._header[i].title : '&nbsp;');
 			res.push('</th>');
 		}
 
+		res.push('</tr>');
+
+		res.push(this._rows.length ? '<tr class="s-nav-empty" style="display:none">' : '<tr class="s-nav-empty">');
+		res.push('<td colspan="{0}">{1}</td>'.format(this._header.length, SL.get('interface/navigator/empty-text')));
 		res.push('</tr>');
 
 		for (var i = 0; i < this._rows.length; i++)
@@ -661,6 +696,23 @@ SNavigator = function()
 		}
 
 		res.push('</table>');
+		res.push('</div>');
+		res.push('<div class="s-nav-hdr">');
+
+		for (var i = 0; i < this._header.length; i++)
+		{
+			var h_cls = '';
+
+			if (i == 0) h_cls = (h_cls + ' s-nav-first').trim();
+			if (i == this._header.length-1) h_cls = (h_cls + ' s-nav-last').trim();
+
+			res.push(h_cls=='' ? '<div>' : '<div class="{0}">'.format(h_cls));
+			res.push(this._header[i].title.length ? this._header[i].title : '&nbsp;');
+			res.push('</div>');
+		}
+
+		res.push('</div>');
+		res.push('</div>');
 
 		this._dom = S.build(res.join(''))[0];
 	}
@@ -672,14 +724,37 @@ SNavigator = function()
 		row.onclick = SNavigator.on_click;
 	}
 
+	this._update_header = function()
+	{
+		if (this._row_header == null) return;
+
+		for (var i = 0; i < this._header.length; i++)
+		{
+			var th = this._row_header.childNodes[i];
+			var hdr = this._div_header.childNodes[i];
+
+			var wdt = th.offsetWidth;
+			if (!S.is_ie) wdt -= 12;	// paddings and borders
+
+			hdr.style.left = th.offsetLeft + 'px';
+			hdr.style.width = wdt + 'px';
+		}
+	}
+
 	this._update_dom = function()
 	{
 		this._dom.__s_el = this;
-		var table_rows = this._dom.childNodes[0].childNodes;
 
-		for (var i = 1; i < table_rows.length; i++)
+		this._tbody = this._dom.childNodes[0].childNodes[0].childNodes[0];
+		this._row_header = this._tbody.childNodes[0];
+		this._row_empty = this._tbody.childNodes[1];
+		this._div_header = this._dom.childNodes[1];
+
+		var table_rows = this._tbody.childNodes;
+
+		for (var i = 2; i < table_rows.length; i++)
 		{
-			var row = this._rows[i - 1];
+			var row = this._rows[i - 2];
 
 			row.dom = table_rows[i];
 			this._rows_hash[row.data[this._id_field]] = row;
@@ -693,6 +768,14 @@ SNavigator = function()
 		}
 
 		if (this._active_id != '') this.set_active_id(this._active_id);
+		this._update_header();
+	}
+
+	this._update_empty_info = function()
+	{
+		if (this._row_empty != null) {
+			this._row_empty.style.display = (this._rows.length ? 'none' : '');
+		}
 	}
 
 	this.append_row = function(data)
@@ -727,7 +810,7 @@ SNavigator = function()
 				if (typeof(hdr.post_render) != $undef) hdr.post_render(td, data[fld], data);
 			}
 
-			this._dom.childNodes[0].appendChild(tr);
+			this._tbody.appendChild(tr);
 
 			item.dom = tr;
 			this._set_row_handlers(tr);
@@ -735,6 +818,9 @@ SNavigator = function()
 
 		this._rows.push(item);
 		this._rows_hash[data[this._id_field]] = item;
+
+		this._update_empty_info();
+		this._update_header();
 	}
 
 	this.append_rows = function(arr)
@@ -799,7 +885,7 @@ SNavigator = function()
 	{
 		if (this._dom != null) {
 			for (var i = 0; i < this._rows.length; i++) {
-				this._dom.childNodes[0].removeChild(this._rows[i].dom);
+				this._tbody.removeChild(this._rows[i].dom);
 			}
 		}
 
@@ -825,7 +911,7 @@ SNavigator.on_mouse_out = function()
 
 SNavigator.on_click = function()
 {
-	var el = this.parentNode.parentNode.__s_el;
+	var el = this.parentNode.parentNode.parentNode.parentNode.__s_el;
 
 	if (el._click_handler !== null)
 	{
@@ -1124,7 +1210,7 @@ SForm = function()
 	{
 		this._dom = S.build([
 			'<form name="{0}" action="{1}" method="POST" enctype="multipart/form-data" class="s-inp-form">'.format(this._name, S.html(this._url)),
-				'<input type="hidden" name="_s_{0}_action" value="{1} />'.format(this._name, S.html(this._page_action)),
+				'<input type="hidden" name="_s_{0}_action" value="{1}" />'.format(this._name, S.html(this._page_action)),
 			'</form>'
 		].join(''))[0];
 	}

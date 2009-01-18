@@ -869,6 +869,8 @@ S = function()
 			if (el.createTextRange)
 			{
 				var rng = document.selection.createRange().duplicate();
+				if (rng.parentElement() != el) return el.value.length;
+
 				rng.moveEnd('character', el.value.length);
 				return (rng.text=='' ? el.value.length : el.value.lastIndexOf(rng.text));
 			}
@@ -895,12 +897,42 @@ S = function()
 
 		_handle_errors: function(msg, url, line)
 		{
-			if (url=='' && line==0) {
-				S.error(msg);
-			} else {
-				S.error('{0}\n{1}:{2}\n\n{3}'.format(msg, url, line, (typeof(__s_trace)==$undef ? '' : __s_trace.join('\n'))));
+			if (url!='' || line!=0)
+			{
+				var curr = arguments.callee.caller;
+				var re = /function\s*([\w\-$]+)?\s*\(/i;
+				var stack = [];
+				var j = 0;
+				var fn, args, i;
+
+				while (curr)
+				{
+					fn = (re.test(curr.toString()) ? (RegExp.$1 || '{anonymous}') : '{anonymous}');
+					args = stack.slice.call(curr.arguments);
+					i = args.length;
+
+					while (i--)
+					{
+						switch (typeof args[i])
+						{
+							case 'string':
+								args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';
+								break;
+
+							case 'function':
+								args[i] = 'function';
+								break;
+						}
+					}
+
+					stack[j++] = fn + '(' + args.join() + ')';
+					curr = curr.caller;
+				}
+
+				msg = '{0}\n\n{1}:{2}\n{3}\n'.format(msg, url, line, stack.join('\n'));
 			}
 
+			S.error(msg);
 			return false;
 		}
 	};
