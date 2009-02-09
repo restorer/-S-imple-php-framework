@@ -512,7 +512,7 @@ class SPage
 	# = protected string render_result()
 	# Render page to string. In most of cases, you don't need to call this method directly
 	##
-	protected function render_result()
+	protected function render_result()	// '
 	{
 		if (!array_key_exists('this_page', $this->vars)) {
 			$this->vars['this_page'] = $this;
@@ -524,16 +524,14 @@ class SPage
 
 		$res = $tpl->process($this->template_name);
 
-		if (strlen($this->design_page_name))
+		if (strlen($this->design_page_name) && @file_exists($this->design_page_name))
 		{
-
 			$tpl = new STemplate();
 			$tpl->vars =& $this->vars;
 			$tpl->controls =& $this->controls;
 
 			$tpl->vars['__content__'] = $res;
 			$res = $tpl->process($this->design_page_name);
-
 		}
 
 		return $res;
