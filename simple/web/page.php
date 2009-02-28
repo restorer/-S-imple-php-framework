@@ -514,8 +514,8 @@ class SPage
 	##
 	protected function render_result()	// '
 	{
-		if (!array_key_exists('this_page', $this->vars)) {
-			$this->vars['this_page'] = $this;
+		if (!array_key_exists('self', $this->vars)) {
+			$this->vars['self'] = $this;
 		}
 
 		$tpl = new STemplate();

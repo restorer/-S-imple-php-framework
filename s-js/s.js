@@ -190,9 +190,9 @@ S = function()
 	var begin_request = [];
 	var end_request = [];
 
-	// thanks goes to http://www.json.org/json2.js, but here is more correct version (original version don't escape russian characters)
+	// thanks goes to http://www.json.org/json2.js, but here is more correct version (original version doesn't escape russian characters)
 	var json_escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0100-\uffff]/g;
-	var json_meta = { '\b':'\\b', '\t':'\\t', '\n':'\\n', '\f':'\\f', '\r':'\\r', '"' :'\\"', '\\':'\\\\' };
+	var json_meta = { '\b':'\\b', '\t':'\\t', '\n':'\\n', '\f':'\\f', '\r':'\\r', '"' :'\\"', '\\':'\\\\' };	// "
 
 	return {
 		is_ie: (document.all && !window.opera),

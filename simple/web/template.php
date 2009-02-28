@@ -99,6 +99,7 @@ class STemplate
 		$pos = 0;
 		$res = '';
 		$text = '';
+		$tmp_num = 0;
 
 		if ($buf != '')
 		{
@@ -277,7 +278,21 @@ class STemplate
 							{
 								$op = strtolower($op);
 
-								if ($op=='for' || $op=='foreach' || $op=='if' || $op=='while' || $op=='elseif' || $op=='elsif' || $op=='each')
+								if ($op == 'iterate')
+								{
+									$spl = explode(',', $expr);
+
+									$arr = trim($spl[0]);
+									$item = (count($spl) > 1 ? trim($spl[1]) : '$item');
+									$counter = (count($spl) > 2 ? trim($spl[2]) : '$item_ind');
+
+									$tmp_num++;
+
+									$stat = "\$__t_${tmp_num}=count(${arr});";
+									$stat .= "for(${counter}=0;${counter}<\$__t_${tmp_num};${counter}++){";
+									$stat .= "${item}=${arr}[${counter}];";
+								}
+								else if ($op=='for' || $op=='foreach' || $op=='if' || $op=='while' || $op=='elseif' || $op=='elsif' || $op=='each')
 								{
 									if ($expr{0}!='(' || $op=='if' || $op=='while' || $op=='elseif' || $op=='elsif') $expr = '('.$expr.')';
 
