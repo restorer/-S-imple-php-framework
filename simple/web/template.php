@@ -349,12 +349,29 @@ class STemplate
 		}
 	}
 
+	protected function virt_funcname($virt_path)
+	{
+		$res = preg_replace("/[^a-z0-9_]/", '', preg_replace("/[\-\.\\\\\/]/", '_', $virt_path));
+		return ('__s_tpl_' . $res);
+	}
+
 	protected function generate_funcname($filename)
 	{
 		$res = strtolower(substr($filename, strlen(BASE)));
-		$res = preg_replace("/[^a-z0-9_]/", '', preg_replace("/[\-\.\\\\\/]/", '_', $res));
+		return $this->virt_funcname($res);
+	}
 
-		return ('__s_tpl_' . $res);
+	public function process_str($content, $virt_path)
+	{
+		$funcname = $this->virt_funcname($virt_path);
+
+		if (!function_exists($funcname))
+		{
+			$parsed = $this->parse($content, $funcname);
+			eval($parsed);
+		}
+
+		return call_user_func($funcname, $this, $this->vars);
 	}
 
 	##

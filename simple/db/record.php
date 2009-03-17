@@ -53,6 +53,7 @@ class SRecord extends SEntity
 	# [$auto_init] Auto initialize table name and fields
 	# Don't forget to call parent constructor in your class
 	##
+	// '
 	function __construct($auto_init=true)
 	{
 		$this->_filters[SRECORD_FILTER_AFTER_LOAD] = array();
@@ -124,7 +125,7 @@ class SRecord extends SEntity
 
 		if ($rel['t']==SRECORD_RELATION_BELONGS_TO || $rel['t']==SRECORD_RELATION_HAS_ONE)
 		{
-			eval("\$tmp=new {$rel['o']}();");
+			$tmp = new $rel['o'];
 
 			if ($tmp->find($res_cond)) {
 				$this->_rel_objects[$fieldname] = $tmp;
@@ -239,6 +240,7 @@ class SRecord extends SEntity
 	# = protected void map_key(string $keyname)
 	# Usually you don't need to call this function manually (use **$auto_init** instead)
 	##
+	// '
 	protected function map_key($keyname)
 	{
 		$this->_db_key = $keyname;
@@ -248,6 +250,7 @@ class SRecord extends SEntity
 	# = protected void map_table(string $table)
 	# Map object to table in database. Usually you don't need to call this function manually (use **$auto_init** instead)
 	##
+	// '
 	protected function map_table($table)
 	{
 		$this->_db_table = $table;
@@ -257,6 +260,7 @@ class SRecord extends SEntity
 	# = protected void map_field(string $field, string $db_field, int $db_type, int $db_size)
 	# Map object field to database field. Usually you don't need to call this function manually (use **$auto_init** instead)
 	##
+	// '
 	protected function map_field($field, $db_field, $db_type, $db_size)
 	{
 		$this->_db_fields[$field] = array('f'=>$db_field, 't'=>$db_type, 's'=>$db_size);
@@ -342,7 +346,7 @@ class SRecord extends SEntity
 		if (is_array($conditions) && count($conditions))
 		{
 			$res = array();
-			if (preg_match("/[<>=]\s*$/i", $conditions[0])) $conditions = array($conditions);
+			if (!is_array($conditions[0]) && preg_match("/[<>=]\s*$/i", $conditions[0])) $conditions = array($conditions);
 
 			foreach ($conditions as $item)
 			{
@@ -378,7 +382,7 @@ class SRecord extends SEntity
 	protected function _bind_where($cmd, $conditions)
 	{
 		if (!is_array($conditions) || !count($conditions)) return;
-		if (preg_match("/[<>=]\s*$/i", $conditions[0])) $conditions = array($conditions);
+		if (!is_array($conditions[0]) && preg_match("/[<>=]\s*$/i", $conditions[0])) $conditions = array($conditions);
 
 		foreach ($conditions as $item)
 		{
@@ -599,7 +603,7 @@ class SRecord extends SEntity
 
 		foreach ($arr as $row)
 		{
-			eval("\$obj=new {$classname}();");
+			$obj = new $classname;
 			$obj->_init();
 
 			foreach ($obj->_db_fields as $prop=>$ts) {
@@ -620,7 +624,7 @@ class SRecord extends SEntity
 	##
 	public static function find_all($classname, $conditions=null, $order=null, $limit=null)
 	{
-		eval("\$tmp=new {$classname}();");
+		$tmp = new $classname;
 		$tmp->_init();
 
 		$cmd = new SDBCommand("SELECT * FROM @_db_table" . $tmp->_get_where_string($conditions) . $tmp->_get_order_string($order));
@@ -640,7 +644,7 @@ class SRecord extends SEntity
 	##
 	public static function get_count($classname, $conditions=null)
 	{
-		eval("\$tmp=new {$classname}();");
+		$tmp = new $classname;
 		$tmp->_init();
 
 		$cmd = new SDBCommand("SELECT COUNT(*) FROM @_db_table" . $tmp->_get_where_string($conditions));
@@ -658,7 +662,7 @@ class SRecord extends SEntity
 	##
 	public static function remove_all($classname, $conditions=null)
 	{
-		eval("\$tmp=new {$classname}();");
+		$tmp = new $classname;
 		$tmp->_init();
 
 		$cmd = new SDBCommand("DELETE FROM @_db_table" . $tmp->_get_where_string($conditions));
@@ -676,7 +680,7 @@ class SRecord extends SEntity
 	##
 	public static function remove_by_id($classname, $id)
 	{
-		eval("\$tmp=new {$classname}();");
+		$tmp = new $classname;
 		$tmp->_init();
 
 		$cmd = new SDBCommand("DELETE FROM @_db_table WHERE @_f_id=@id");

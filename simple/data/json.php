@@ -29,8 +29,10 @@ interface SJsonSerializable
 ##
 class SJson
 {
-	public static $find = array('\\',   "'",  '/',  "\b", "\f", "\n", "\r", "\t", "\u");
-	public static $repl = array('\\\\', "\'", '\/', '\b', '\f', '\n', '\r', '\t', '\u');
+	// replace '/' -> "\/" removed
+
+	public static $find = array('\\',   "'",  "\b", "\f", "\n", "\r", "\t", "\u");	// "
+	public static $repl = array('\\\\', "\'", '\b', '\f', '\n', '\r', '\t', '\u');	// '
 
 	##
 	# = public static mixed deserialize(string $json_str)
