@@ -30,9 +30,15 @@ class SRecord extends SEntity
 	protected $_db_key = 'id';
 	protected $_db_table = '';
 	protected $_db_fields = array();
+	protected $_db_prev_value = array();
 	protected $_filters = array();
 	protected $_relations = array();
 	protected $_rel_objects = array();
+
+	##
+	# [$_use_dirty] Use $_db_prev_value and dirty flag or not
+	##
+	protected $_use_dirty = true;
 
 	##
 	# **Using search conditions:**
@@ -341,6 +347,27 @@ class SRecord extends SEntity
 		return ($this->$keyname === null);
 	}
 
+	##
+	# = public bool is_dirty(string $field='')
+	##
+	public function is_dirty($field='')
+	{
+		if (!$this->_use_dirty) return true;
+		if ($this->is_new()) return true;
+
+		if (strlen($field)) {
+			return (!array_key_exists($field, $this->_db_prev_value) || $this->$field!=$this->_db_prev_value[$field]);
+		}
+
+		foreach ($this->_db_fields as $prop=>$ts) {
+			if (!array_key_exists($prop, $this->_db_prev_value) || $this->$prop!=$this->_db_prev_value[$prop]) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	protected function _get_where_string($conditions)
 	{
 		if (is_array($conditions) && count($conditions))
@@ -365,11 +392,9 @@ class SRecord extends SEntity
 
 					$res[] = "@_f_{$fld}{$mt[2]}@{$fld}";
 				}
-
-				return (' WHERE ' . join(' AND ', $res));
 			}
 
-			return;
+			return (' WHERE ' . join(' AND ', $res));
 		}
 		elseif (is_string($conditions))
 		{
@@ -464,8 +489,19 @@ class SRecord extends SEntity
 		$row = $cmd->get_row();
 		if ($row === null) return false;
 
-		foreach ($this->_db_fields as $prop=>$dummy) {
-			$this->$prop = $row[$prop];
+		if ($this->_use_dirty)
+		{
+			foreach ($this->_db_fields as $prop=>$ts)
+			{
+				$this->$prop = $row[$ts['f']];
+				$this->_db_prev_value[$prop] = $this->$prop;
+			}
+		}
+		else
+		{
+			foreach ($this->_db_fields as $prop=>$ts) {
+				$this->$prop = $row[$ts['f']];
+			}
 		}
 
 		$this->_process_filters(SRECORD_FILTER_AFTER_LOAD);
@@ -568,6 +604,12 @@ class SRecord extends SEntity
 			$cmd->execute();
 		}
 
+		if ($this->_use_dirty) {
+			foreach ($this->_db_fields as $prop=>$ts) {
+				$this->_db_prev_value[$prop] = $this->$prop;
+			}
+		}
+
 		$this->_process_filters(SRECORD_FILTER_AFTER_SAVE);
 	}
 
@@ -606,8 +648,19 @@ class SRecord extends SEntity
 			$obj = new $classname;
 			$obj->_init();
 
-			foreach ($obj->_db_fields as $prop=>$ts) {
-				$obj->$prop = $row[$ts['f']];
+			if ($obj->_use_dirty)
+			{
+				foreach ($obj->_db_fields as $prop=>$ts)
+				{
+					$obj->$prop = $row[$ts['f']];
+					$obj->_db_prev_value = $obj->$prop;
+				}
+			}
+			else
+			{
+				foreach ($obj->_db_fields as $prop=>$ts) {
+					$obj->$prop = $row[$ts['f']];
+				}
 			}
 
 			$obj->_process_filters(SRECORD_FILTER_AFTER_LOAD);

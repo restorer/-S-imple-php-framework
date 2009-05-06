@@ -359,6 +359,14 @@ function now()
 }
 
 ##
+# = string capitalize(string $str)
+##
+function capitalize($str)
+{
+	return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1);
+}
+
+##
 # = void _log(string $msg, string $path='')
 ##
 function _log($msg, $path='', $supress_errors=false)

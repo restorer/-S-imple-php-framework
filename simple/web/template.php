@@ -79,6 +79,9 @@ class STemplate
 	{
 		$buf = str_replace(chr(0x0D), chr(0x0A), str_replace(chr(0x0A).chr(0x0D), chr(0x0A), str_replace(chr(0x0D).chr(0x0A), chr(0x0A), $buf)));
 
+		$lbra_sz = strlen(LBRA);
+		$rbra_sz = strlen(RBRA);
+
 		if ($this->optimize_html)
 		{
 			$spl = explode(chr(0x0A), $buf);
@@ -91,7 +94,7 @@ class STemplate
 				if (strlen($line))
 				{
 					$buf .= $line;
-					if (substr($line, -strlen(RBRA)) != RBRA) $buf .= "\n";
+					if (substr($line, 0, $lbra_sz)!=LBRA || substr($line, -$rbra_sz)!=RBRA) $buf .= "\n";
 				}
 			}
 		}
@@ -104,8 +107,6 @@ class STemplate
 		if ($buf != '')
 		{
 			$sz = strlen($buf);
-			$lbra_sz = strlen(LBRA);
-			$rbra_sz = strlen(RBRA);
 
 			for (;;)
 			{
@@ -284,11 +285,12 @@ class STemplate
 
 									$arr = trim($spl[0]);
 									$item = (count($spl) > 1 ? trim($spl[1]) : '$item');
-									$counter = (count($spl) > 2 ? trim($spl[2]) : '$item_ind');
+									$counter = (count($spl) > 2 ? trim($spl[2]) : $item.'_ind');
+									$limit = (count($spl) > 3 ? trim($spl[3]) : $item.'_cnt');
 
 									$tmp_num++;
 
-									$stat = "\$__t_${tmp_num}=count(${arr});";
+									$stat = "\$__t_${tmp_num}=count(${arr});${limit}=\$__t_${tmp_num};";
 									$stat .= "for(${counter}=0;${counter}<\$__t_${tmp_num};${counter}++){";
 									$stat .= "${item}=${arr}[${counter}];";
 								}
@@ -400,7 +402,7 @@ class STemplate
 			if (!file_exists($filename)) throw new Exception("Template \"$filename\" doesn't exists");
 
 			$dir = substr(dirname($filename), strlen(BASE));
-			$rdir = conf('cache.path').$dir;
+			$rdir = conf('cache.path').'templates/'.$dir;
 			if ($dir!='' && !is_dir($rdir)) make_directory($rdir);
 
 			if (substr($rdir, -1) != '/') $rdir .= '/';
@@ -417,7 +419,7 @@ class STemplate
 				{
 					fwrite($fp, '<'.'?'.'php'."\n" . $parsed);		// closing php tag is not necessary
 					fclose($fp);
-					chmod($rname, 0777);
+					chmod($rname, 0555+0111);
 				}
 				else
 				{

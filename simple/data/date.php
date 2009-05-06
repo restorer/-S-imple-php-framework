@@ -30,7 +30,7 @@ class SDate
 		}
 	}
 
-	public static function format($value, $format)
+	public static function format($value, $format='')
 	{
 		$tm = (is_numeric($value) ? $value : self::parse($value));
 
