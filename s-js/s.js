@@ -74,46 +74,6 @@ Number.prototype.format = function(format)
 	return res;
 }
 
-Array.prototype.map = function(func)
-{
-	var res = [];
-	for (var i = 0; i < this.length; i++) res.push(func(this[i]));
-	return res;
-}
-
-Array.prototype.to_hash = function()
-{
-	var res = {};
-	for (var i = 0; i < this.length; i++) res[this[i]] = true;
-	return res;
-}
-
-Array.prototype.append = function(arr)
-{
-	for (var i = 0; i < arr.length; i++) {
-		this.push(arr[i]);
-	}
-
-	return this;
-}
-
-//
-// collect is NOT same as collect in ruby (which is equal to map)
-// this collect is opposite to reject from fuby
-//
-Array.prototype.collect = function(func)
-{
-	var res = [];
-
-	for (var i = 0; i < this.length; i++) {
-		if (func(this[i])) {
-			res.push(this[i]);
-		}
-	}
-
-	return res;
-}
-
 String.prototype.empty = function()
 {
 	return (this.length == 0);
@@ -190,27 +150,114 @@ S = function()
 	var begin_request = [];
 	var end_request = [];
 
-	// thanks goes to http://www.json.org/json2.js, but here is more correct version (original version doesn't escape russian characters)
+	// thanks goes to http://www.json.org/json2.js, but here is more correct version (original version didn't escape russian characters)
 	var json_escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0100-\uffff]/g;
 	var json_meta = { '\b':'\\b', '\t':'\\t', '\n':'\\n', '\f':'\\f', '\r':'\\r', '"' :'\\"', '\\':'\\\\' };	// "
 
+	var err_el = null;
+	var in_error = false;
+
 	return {
+		array_map: function(arr, func)
+		{
+			var res = [];
+			for (var i = 0; i < arr.length; i++) res.push(func(arr[i]));
+			return res;
+		},
+
+		array_to_hash: function(arr)
+		{
+			var res = {};
+			for (var i = 0; i < arr.length; i++) res[arr[i]] = true;
+			return res;
+		},
+
+		array_append: function(arr, append_arr)
+		{
+			for (var i = 0; i < append_arr.length; i++) {
+				arr.push(arr_append[i]);
+			}
+
+			return arr;
+		},
+
+		array_select: function(arr, func)
+		{
+			var res = [];
+
+			for (var i = 0; i < arr.length; i++) {
+				if (func(arr[i])) {
+					res.push(arr[i]);
+				}
+			}
+
+			return res;
+		},
+
 		is_ie: (document.all && !window.opera),
 
 		error: function(msg)
 		{
-			alert('[' + SL.get('s/error_occurred') + ']\n\n' + msg);
+			if (in_error) return;
+
+			in_error = true;
+			S.mask();
+
+			if (err_el == null)
+			{
+				err_el = S.create('DIV', { className:'s-error' });
+				document.body.appendChild(err_el);
+			}
+			else
+			{
+				err_el.style.display = '';
+			}
+
+			err_el.innerHTML = [
+				'<b>' + SL.get('s/error_occurred') + '</b>',
+				'<br /><br />',
+				msg.replace(/\n/g, '<br />'),
+				'<br /><br />',
+				'<span onclick="S._hide_error()">Close</span>'
+			].join('');
+
+			if (S.is_ie) {
+				err_el.style.top = document.body.scrollTop + 'px';
+			}
 		},
 
-		dump: function(obj)
+		_hide_error: function()
+		{
+			if (in_error && err_el)
+			{
+				err_el.style.display = 'none';
+				S.unmask();
+				in_error = false;
+			}
+		},
+
+
+		dump: function(obj, dump_functions)
 		{
 			var str = '';
-			for (var k in obj) str += k + ': ' + obj[k] + '\n';
+
+			for (var k in obj)
+			{
+				str += k + ': ';
+
+				if (typeof(obj[k])!='function' || dump_functions) str += obj[k];
+				else str += '{function}';
+
+				str += '\n';
+			}
+
 			alert(str);
 		},
 
 		debug: function(msg)
 		{
+			msg = String(msg);
+
 			if (debug_el === null)
 			{
 				setTimeout(function()
@@ -219,7 +266,7 @@ S = function()
 
 					if (cnt === null)
 					{
-						cnt = S.create('DIV', { id:'__s_debug__', innerHTML: '<pre></pre>' }, { position:'absolute', top:'0', left:'0', backgroundColor:'#FFF' });
+						cnt = S.create('DIV', { id:'__s_debug__', innerHTML: '<pre></pre>' }, { position:'absolute', top:'0', left:'0', backgroundColor:'#FFF', zIndex:'10000' });
 						document.body.appendChild(cnt);
 					}
 
@@ -241,7 +288,7 @@ S = function()
 				return;
 			}
 
-			debug_el.innerHTML += "\n" + S.html(msg)
+			debug_el.innerHTML += (debug_el.innerHTML ? '<br />' : '') + S.html(msg);
 			debug_el.parentNode.style.display = '';
 		},
 
@@ -560,7 +607,7 @@ S = function()
 		html: function(str)
 		{
 			if (typeof(str) == $undef) throw $new(SException, 'str is undefined');
-			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');	// "
 		},
 
 		unhtml: function(str)
@@ -602,6 +649,9 @@ S = function()
 				}(),
 				page: function() {
 					return {
+						width: function() {
+							return ((window.innerWidth && window.scrollMaxX) ? (window.innerWidth + window.scrollMaxX) : ((document.body.scrollWidth > document.body.offsetWidth) ? document.body.scrollWidth : document.body.offsetWidth));
+						},
 						height: function() {
 							return ((window.innerHeight && window.scrollMaxY) ? (window.innerHeight + window.scrollMaxY) : ((document.body.scrollHeight > document.body.offsetHeight) ? document.body.scrollHeight : document.body.offsetHeight));
 						}
@@ -612,10 +662,10 @@ S = function()
 
 		add_class: function(element, className)
 		{
-			var cls = String(element.className).split(' ').collect(function(s){ return !s.empty(); });
-			var ncls = String(className).split(' ').collect(function(s){ return !s.empty(); });
+			var cls = S.array_select(String(element.className).split(' '), function(s){ return !s.empty(); });
+			var ncls = S.array_select(String(className).split(' '), function(s){ return !s.empty(); });
 
-			var already = cls.to_hash();
+			var already = S.array_to_hash(cls);
 
 			for (var i = 0; i < ncls.length; i++)
 			{
@@ -633,8 +683,8 @@ S = function()
 
 		rm_class: function(element, className)
 		{
-			var cls = String(element.className).split(' ').collect(function(s){ return !s.empty(); });
-			var rcls = String(className).split(' ').collect(function(s){ return !s.empty(); }).to_hash();
+			var cls = S.array_select(String(element.className).split(' '), function(s){ return !s.empty(); });
+			var rcls = S.array_to_hash(S.array_select(String(className).split(' '), function(s){ return !s.empty(); }));
 
 			var res = [];
 
@@ -649,8 +699,8 @@ S = function()
 
 		has_class: function(element, className)
 		{
-			var cls = String(element.className).split(' ').collect(function(s){ return !s.empty(); }).to_hash();
-			var hcls = String(className).split(' ').collect(function(s){ return !s.empty(); });
+			var cls = S.array_to_hash(S.array_select(String(element.className).split(' '), function(s){ return !s.empty(); }));
+			var hcls = S.array_select(String(className).split(' '), function(s){ return !s.empty(); });
 
 			for (var i = 0; i < hcls.length; i++) {
 				if (typeof(cls[hcls[i]]) == $undef) {
@@ -687,7 +737,9 @@ S = function()
 				mask_el.style.display = '';
 			}
 
-			mask_el.style.height = S.info.page.height() + 'px';
+			if (S.is_ie) {
+				mask_el.style.height = S.info.page.height() + 'px';
+			}
 		},
 
 		unmask: function()
@@ -894,51 +946,8 @@ S = function()
 				return el.selectionEnd;
 			}
 		},
-
-		_handle_errors: function(msg, url, line)
-		{
-			if (url!='' || line!=0)
-			{
-				var curr = arguments.callee.caller;
-				var re = /function\s*([\w\-$]+)?\s*\(/i;
-				var stack = [];
-				var j = 0;
-				var fn, args, i;
-
-				while (curr)
-				{
-					fn = (re.test(curr.toString()) ? (RegExp.$1 || '{anonymous}') : '{anonymous}');
-					args = stack.slice.call(curr.arguments);
-					i = args.length;
-
-					while (i--)
-					{
-						switch (typeof args[i])
-						{
-							case 'string':
-								args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';
-								break;
-
-							case 'function':
-								args[i] = 'function';
-								break;
-						}
-					}
-
-					stack[j++] = fn + '(' + args.join() + ')';
-					curr = curr.caller;
-				}
-
-				msg = '{0}\n\n{1}:{2}\n{3}\n'.format(msg, url, line, stack.join('\n'));
-			}
-
-			S.error(msg);
-			return false;
-		}
 	};
 }();
-
-window.onerror = S._handle_errors;
 
 function $void() {}
 
@@ -1002,7 +1011,7 @@ function SClass()
 
 	this.new_uid = function()
 	{
-		if (typeof(window['__global_guid_counter__']) == 'undefined') window['__global_guid_counter__'] = 0;
+		if (typeof(window['__global_guid_counter__']) == $undef) window['__global_guid_counter__'] = 0;
 		window['__global_guid_counter__']++;
 		return String(window['__global_guid_counter__']) + (new Date()).valueOf();
 	}
@@ -1066,9 +1075,9 @@ SException.get_stack_trace = function()
 
 			for (i=4, j=0, len=lines.length; i < len; i += 2) {
 				if (re.test(lines[i])) {
-                    lines[j++] = (RegExp.$3 ? (RegExp.$3 + '()@' + RegExp.$2 + RegExp.$1) : ('{anonymous}' + RegExp.$2 + ':' + RegExp.$1)) + ' -- ' + lines[i+1].replace(/^\s+/, '');
-                }
-            }
+					lines[j++] = (RegExp.$3 ? (RegExp.$3 + '()@' + RegExp.$2 + RegExp.$1) : ('{anonymous}' + RegExp.$2 + ':' + RegExp.$1)) + ' -- ' + lines[i+1].replace(/^\s+/, '');
+				}
+			}
 
 			lines.splice(j, lines.length - j);
 			return lines;
@@ -1092,7 +1101,7 @@ SException.get_stack_trace = function()
 					switch (typeof args[i])
 					{
 						case 'string':
-							args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';
+							args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';		// "
 							break;
 
 						case 'function':
@@ -1112,9 +1121,9 @@ SException.get_stack_trace = function()
 	return ['ERROR'];
 }
 
-/*
- * Locales
- */
+//
+// Locales
+//
 
 SL.set('s/error_occurred', 'Error occurred', 'en');
 SL.set('s/no_xmlhttp', 'Unable find XMLHttpRequest or it ActiveX alalog.', 'en');
@@ -1128,4 +1137,4 @@ SL.set('s/no_xmlhttp', 'Ваш браузер не поддерживает те
 SL.set('s/error_sending', 'Произошла ошибка при отправлении данных в "{0}": {1}\n{2}', 'ru');
 SL.set('s/internal_error_sending', 'Произошла внутренняя ошибка при отправлении данных в "{0}"', 'ru');
 SL.set('s/script_not_found', 'Скрипт "{0}" не найден', 'ru');
-SL.set('s/cant_include_script', 'Произошла ошибка при подключении скрипта  "{0}". Возможно отсутствует тэг HEAD.', 'ru');
+SL.set('s/cant_include_script', 'Произошла ошибка при подключении скрипта "{0}". Возможно отсутствует тэг HEAD.', 'ru');
