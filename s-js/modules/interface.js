@@ -374,7 +374,6 @@ SInputFile = function()
 		this._dom = S.build([
 			'<span class="s-inp-file">',
 				'<div class="s-inp-file-cont">',
-					'<div></div>',
 					'<label class="s-inp-file-label">',
 						'<input size="1" class="s-inp-file-input" type="file" name="{0}" />'.format(this._name),
 					'</label>',
@@ -383,7 +382,7 @@ SInputFile = function()
 			'</span>'
 		].join(''))[0];
 
-		this._dom_el = this._dom.childNodes[0].childNodes[1].childNodes[0];
+		this._dom_el = this._dom.childNodes[0].childNodes[0].childNodes[0];
 		this._dom_text = this._dom.childNodes[1];
 	}
 
@@ -461,7 +460,13 @@ SCheckBox = function()
 
 		var res = [
 			'<span class="s-chb">',
-			'<input type="checkbox" id="{0}" value="1" name="{1}" />'.format(id, this._name)
+			'<input type="hidden" value="{0}" name="{1}" />'.format(this._params.unchecked_value, this._name),
+			'<input type="checkbox" id="{0}" value="{1}" name="{2}"{3} />'.format(
+				id,
+				this._params.checked_value,
+				this._name,
+				(this._value == this._params.checked_value ? ' checked="checked"' : '')
+			)
 		];
 
 		if (this._params.title != '') {
@@ -471,7 +476,7 @@ SCheckBox = function()
 		res.push('<span>');
 
 		this._dom = S.build(res.join(''))[0];
-		this._dom_el = this._dom.childNodes[0];
+		this._dom_el = this._dom.childNodes[1];
 	}
 
 	this.get_value = function()
@@ -1260,5 +1265,50 @@ SForm = function()
 
 		var hid = S.create('INPUT', { type:'hidden', name:name, value:value });
 		this._dom.appendChild(hid);
+	}
+}
+
+SDropDown = function()
+{
+	$extend(this, SInputElement);
+
+	this._name = '';
+	this._value = '';
+	this._options = [];
+
+	this.init = function(name, value, options)
+	{
+		this._name = ((typeof(name)==$undef || name===null) ? '' : String(name));
+		this._value = ((typeof(value)==$undef || value===null) ? '' : String(value));
+		this._options = ((typeof(options)==$undef || options===null) ? [] : options);
+	}
+
+	this._render_dom = function()
+	{
+		var res = '<select name="{0}">'.format(this._name);
+
+		for (var i = 0; i < this._options.length; i++) {
+			res += '<option value="{0}">{1}</option>'.format(S.html(this._options[i][0]), S.html(this._options[i][1]));
+		}
+
+		res += '</select>';
+
+		this._dom = S.build(res)[0];
+		this._dom.value = this._value;
+	}
+
+	this.set_name = function(name)
+	{
+		this._ro_set('name', name);
+	}
+
+	this.get_value = function()
+	{
+		return this._do_get('value');
+	}
+
+	this.set_value = function(value)
+	{
+		this._do_set('value', value);
 	}
 }

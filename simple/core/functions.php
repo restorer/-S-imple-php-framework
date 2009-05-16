@@ -367,6 +367,17 @@ function capitalize($str)
 }
 
 ##
+# = object dynamic_cast(object $object, string $class_name)
+# Cast an object to another class, keeping the properties, but changing the methods
+# **WARN:** this function breaks OOP model, but sometimes it useful
+##
+function dynamic_cast($object, $class_name)
+{
+	// serialize/unserialize idea taken from http://blog.adaniels.nl/articles/a-dark-corner-of-php-class-casting/
+	return unserialize(preg_replace('/^O:\d+:"[^"]++"/', 'O:' . strlen($class_name) . ':"' . $class_name . '"', serialize($object)));
+}
+
+##
 # = void _log(string $msg, string $path='')
 ##
 function _log($msg, $path='', $supress_errors=false)

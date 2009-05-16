@@ -152,7 +152,7 @@ class STemplate
 
 						while ($pos<$sz && $buf{$pos}!=$ch)
 						{
-							if ($buf{$pos} == '\\')
+							if ($buf{$pos} == '\\')		// '
 							{
 								$cnt .= $buf{$pos};
 								$pos++;

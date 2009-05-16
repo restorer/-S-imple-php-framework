@@ -653,7 +653,7 @@ class SRecord extends SEntity
 				foreach ($obj->_db_fields as $prop=>$ts)
 				{
 					$obj->$prop = $row[$ts['f']];
-					$obj->_db_prev_value = $obj->$prop;
+					$obj->_db_prev_value[$prop] = $obj->$prop;
 				}
 			}
 			else

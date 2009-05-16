@@ -50,6 +50,7 @@ SFormRow = function()
 	avail_types['checkbox'] = function(){ return $new(SCheckBox, this.id, this.input.value, this.params); };
 	avail_types['date'] = function(){ return $new(SDateSelector, this.id, this.input.value, this.params); };
 	avail_types['file'] = function(){ return $new(SInputFile, this.id, this.input.value, this.params); };
+	avail_types['dropdown'] = function(){ return $new(SDropDown, this.id, this.input.value, this.options); };
 
 	$extend(this, SClass);
 
@@ -58,6 +59,7 @@ SFormRow = function()
 	this.width = 0;		// 0 - no width override
 	this.render_title = true;
 	this.params = {};
+	this.options = [];
 	this.title_cls = '';
 	this.custom_func = null;
 	this.validate_when_hidden = false;
