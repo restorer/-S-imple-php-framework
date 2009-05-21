@@ -81,7 +81,7 @@ function i_get_backtrace_text($funcnames=array())
 		$total += $sizes[$key];
 	}
 
-	$res = implode(' | ', $arr) . "\n" . implode('-+-', $sep) . "\n";
+	$res = rtrim(implode(' | ', $arr)) . "\n" . implode('-+-', $sep) . "\n";
 
 	foreach ($calls as $call)
 	{
@@ -91,7 +91,7 @@ function i_get_backtrace_text($funcnames=array())
 			$arr[] = sprintf('%-' . $sizes[$key] . 's', $str);
 		}
 
-		$res .= implode(' | ', $arr) . "\n";
+		$res .= rtrim(implode(' | ', $arr)) . "\n";
 	}
 
 	return $res;
@@ -363,7 +363,7 @@ function now()
 ##
 function capitalize($str)
 {
-	return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1);
+	return mb_strtoupper(mb_substr($str, 0, 1)) . mb_strtolower(mb_substr($str, 1));
 }
 
 ##
