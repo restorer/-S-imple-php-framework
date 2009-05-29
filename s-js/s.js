@@ -799,7 +799,7 @@ S = function()
 					}
 
 					var res = [];
-					for (var k in obj) res.push("'" + S.js_encode(k) + "':" + S.serialize(obj[k]));
+					for (var k in obj) res.push(S.json_quote(k) + ":" + S.serialize(obj[k]));
 					return ('{' + res.join(',') + '}');
 			}
 
@@ -945,7 +945,7 @@ S = function()
 			{
 				return el.selectionEnd;
 			}
-		},
+		}
 	};
 }();
 
