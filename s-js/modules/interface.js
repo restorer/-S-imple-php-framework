@@ -388,7 +388,7 @@ SInputFile = function()
 
 	this._update_dom = function()
 	{
-		this._dom.onchange = this.delegate(this._on_change);
+		this._dom_el.onchange = this.delegate(this._on_change);
 
 		this._el_button = $new(SButton, SL.get('interface/select_file'));
 		this._el_button.render(this._dom.childNodes[0]);
@@ -396,7 +396,7 @@ SInputFile = function()
 
 	this._on_change = function(ev)
 	{
-		var name = this._dom_el.value.replace(/\\/, '/');
+		var name = this._dom_el.value.replace(/\\/g, '/');
 
 		var ind = name.lastIndexOf('/');
 		if (ind >= 0) name = name.substr(ind + 1);
