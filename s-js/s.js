@@ -383,28 +383,6 @@ S = function()
 				send_is_active = true;
 			}
 
-			if (callback_func !== null)
-			{
-				req.onreadystatechange = function()
-				{
-					if (req.readyState == 4)
-					{
-						callback_func((req.status==200 || req.status==304) ? req.responseText : null)
-
-						if (send_queue.length != 0)
-						{
-							var msg = send_queue.shift();
-							S.send(msg.url, msg.data, msg.callback_func, 1);
-						}
-						else
-						{
-							for (var i = 0; i < end_request.length; i++) end_request[i]();
-							send_is_active = false;
-						}
-					}
-				};
-			}
-
 			req.open((data === false ? 'GET' : 'POST'), url, (callback_func!==null ? true : false));
 
 			if (data === false)
@@ -425,7 +403,31 @@ S = function()
 				catch (ex) {}
 			}
 
-			if (callback_func !== null) return null;
+			if (callback_func !== null)
+			{
+				// weird bug with FireBug console fixed (thanks to http://www.ghastlyfop.com/blog/2007/01/onreadystate-changes-in-firefox.html)
+
+				req.onreadystatechange = function()
+				{
+					if (req.readyState == 4)
+					{
+						callback_func((req.status==200 || req.status==304) ? req.responseText : null)
+
+						if (send_queue.length != 0)
+						{
+							var msg = send_queue.shift();
+							S.send(msg.url, msg.data, msg.callback_func, 1);
+						}
+						else
+						{
+							for (var i = 0; i < end_request.length; i++) end_request[i]();
+							send_is_active = false;
+						}
+					}
+				}
+
+				return null;
+			}
 
 			try
 			{
