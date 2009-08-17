@@ -77,7 +77,7 @@ class SEmail
 	##
 	# [$headers] Email headers. Usually you don't need to set this field manually
 	##
-	public $headers = array();
+	public $headers = array();	// '
 
 	##
 	# [$attachments] Email attachments
@@ -242,10 +242,10 @@ class SEmail
 			while (strlen($line) > 998)
 			{
 				$pos = strrpos(substr($line, 0, 998), ' ');
-		        if (!$pos) $pos = 997;
+				if (!$pos) $pos = 997;
 
-		        $send[] = substr($line, 0, $pos);
-		        $line = substr($line, $pos + 1);
+				$send[] = substr($line, 0, $pos);
+				$line = substr($line, $pos + 1);
 
 				if ($is_headers) $line = "\t" . $line;
 			}
@@ -255,7 +255,7 @@ class SEmail
 			foreach ($send as $str)
 			{
 				if (strlen($str) && substr($str, 0, 1)=='.') $str = '.' . $str;
-		        $this->smtp_puts($sock, $str . "\r\n");
+				$this->smtp_puts($sock, $str . "\r\n");
 			}
 		}
 	}
@@ -284,7 +284,7 @@ class SEmail
 
 		if (strlen(conf_get('mail.smtp.user')))
 		{
-	    	$this->smtp_puts($sock, "AUTH LOGIN\r\n");
+			$this->smtp_puts($sock, "AUTH LOGIN\r\n");
 
 			if ($this->get_smtp_response_code($sock) != 334)
 			{
@@ -292,7 +292,7 @@ class SEmail
 				return 'SMTP: error while senging AUTH LOGIN request';
 			}
 
-		    $this->smtp_puts($sock, base64_encode(conf_get('mail.smtp.user')) . "\r\n");
+			$this->smtp_puts($sock, base64_encode(conf_get('mail.smtp.user')) . "\r\n");
 
 			if ($this->get_smtp_response_code($sock) != 334)
 			{
@@ -300,16 +300,16 @@ class SEmail
 				return 'SMTP: error while senging AUTH LOGIN request (username not accepted)';
 			}
 
-		    $this->smtp_puts($sock, base64_encode(conf_get('mail.smtp.pass')) . "\r\n");
+			$this->smtp_puts($sock, base64_encode(conf_get('mail.smtp.pass')) . "\r\n");
 
 			if ($this->get_smtp_response_code($sock) != 235)
 			{
 				fclose($sock);
 				return 'SMTP: error while senging AUTH LOGIN request (invalid password)';
 			}
-    	}
+		}
 
-	    $this->smtp_puts($sock, 'MAIL FROM: <' . $from_email . ">\r\n");
+		$this->smtp_puts($sock, 'MAIL FROM: <' . $from_email . ">\r\n");
 
 		if ($this->get_smtp_response_code($sock) != 250)
 		{
@@ -317,8 +317,8 @@ class SEmail
 			return 'SMTP: error while senging MAIL FROM request';
 		}
 
-	    $this->smtp_puts($sock,'RCPT TO: <' . $to . ">\r\n");
-	    $code = $this->get_smtp_response_code($sock);
+		$this->smtp_puts($sock,'RCPT TO: <' . $to . ">\r\n");
+		$code = $this->get_smtp_response_code($sock);
 
 		if ($code!=250 && $code!=251)
 		{
@@ -326,7 +326,7 @@ class SEmail
 			return 'SMTP: error while senging RCPT TO request';
 		}
 
-	    $this->smtp_puts($sock, "DATA\r\n");
+		$this->smtp_puts($sock, "DATA\r\n");
 
 		if ($this->get_smtp_response_code($sock) != 354)
 		{
@@ -347,7 +347,7 @@ class SEmail
 			return 'SMTP: error while senging DATA request (data not accepted)';
 		}
 
-	    $this->smtp_puts($sock, "QUIT\r\n");
+		$this->smtp_puts($sock, "QUIT\r\n");
 
 		if ($this->get_smtp_response_code($sock) != 221)
 		{
@@ -402,8 +402,8 @@ class SEmail
 		}
 		else
 		{
-    		if (version_compare(phpversion(), '4.2.3') == -1) $res = ($stat >> 8) & 0xFF;
-    		else $res = $stat;
+			if (version_compare(phpversion(), '4.2.3') == -1) $res = ($stat >> 8) & 0xFF;
+			else $res = $stat;
 		}
 
 		if ($res) return "SENDMAIL: error occurred (cmd: $cmd) (code: $res)";
