@@ -319,7 +319,7 @@ class STemplate
 
 		if (strlen($text)) $res .= '$__s.=' . $this->escape($text) . ";\n";
 
-		$res = 'function '.$funcname.'($__t,$__v){foreach($__v as $__k=>$__v) $$__k=$__v;$__s=\'\';'."\n".$res.'return $__s;'."\n}\n";
+		$res = 'function '.$funcname.'($__t,$__v){extract($__v);$__s=\'\';'."\n".$res.'return $__s;'."\n}\n";
 		return $res;
 	}
 
