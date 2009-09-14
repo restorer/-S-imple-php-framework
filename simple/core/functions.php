@@ -20,7 +20,7 @@ function i_get_backtrace($funcnames=array())
 
 	if (count($backtrace) &&
 		array_key_exists('args', $backtrace[count($backtrace)-1]) &&
-		count($backtrace[count($backtrace)-1]['args'] == 1) &&
+		(count($backtrace[count($backtrace)-1]['args']) == 1) &&
  		($backtrace[count($backtrace)-1]['args'][0] instanceof Exception))
 	{
 		$trace = $backtrace[count($backtrace)-1]['args'][0]->getTrace();
@@ -145,7 +145,7 @@ function error($message, $rm_from_backtrace=false)
 		$debuglog_str = dflush_str();
 
 		if (LOG_ERRORS) {
-			_log("[[ Error happened ]]\n\n$message\n\n$backtrace_str\n\n$debuglog_str\n\n");
+			_log("[[ Error happened ]]\n\n$message\n\n$backtrace_str\n\n$debuglog_str\n\n", '', true);
 		}
 
 		if (DEBUG)

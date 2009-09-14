@@ -42,7 +42,7 @@ class Documenter
 	{
 		$delimers = "()[]<> \t=-,";
 		$keywords = array('class', 'void', 'string', 'float', 'mixed', 'int', 'bool', 'static', 'date_string',
-						'datetime_string', 'array', 'protected', 'private', 'extends', 'abstract');
+						'datetime_string', 'array', 'protected', 'public', 'private', 'extends', 'abstract');
 
 		$spl = array();
 		$buf = '';

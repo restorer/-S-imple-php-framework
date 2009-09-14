@@ -403,7 +403,7 @@ class STemplate
 
 			$dir = substr(dirname($filename), strlen(BASE));
 			$rdir = conf('cache.path').'templates/'.$dir;
-			if ($dir!='' && !is_dir($rdir)) make_directory($rdir);
+			if ($rdir!='' && !is_dir($rdir)) make_directory($rdir);
 
 			if (substr($rdir, -1) != '/') $rdir .= '/';
 			$rname = $rdir.basename($filename).'.php';

@@ -115,12 +115,12 @@ class SRecord extends SEntity
 				if (preg_match("/^:\s*([A-Za-z0-9_]+)\s*([^A-Za-z0-9_\s]+)\s*([A-Za-z0-9_]+)$/", $cn, $mt))
 				{
 					$thisfield = $mt[1];
-					$res_cond = array($mt[3] . $this->_invert_compare($mt[2]), $this->$thisfield);
+					$res_cond[] = array($mt[3] . $this->_invert_compare($mt[2]), $this->$thisfield);
 				}
 				elseif (preg_match("/^([A-Za-z0-9_]+)\s*([^A-Za-z0-9_\s]+)\s*:\s*([A-Za-z0-9_]+)$/", $cn, $mt))
 				{
 					$thisfield = $mt[3];
-					$res_cond = array($mt[1] . $mt[2], $this->$thisfield);
+					$res_cond[] = array($mt[1] . $mt[2], $this->$thisfield);
 				}
 				else
 				{
