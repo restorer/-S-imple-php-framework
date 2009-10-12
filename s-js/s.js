@@ -214,11 +214,9 @@ S = function()
 			}
 
 			err_el.innerHTML = [
-				'<b>' + SL.get('s/error_occurred') + '</b>',
+				'<span onclick="S._hide_error()" class="s-error-close">&times;</span>&nbsp;<b class="s-error-title">' + SL.get('s/error_occurred') + '</b>',
 				'<br /><br />',
-				msg.replace(/\n/g, '<br />'),
-				'<br /><br />',
-				'<span onclick="S._hide_error()">Close</span>'
+				msg.replace(/\n/g, '<br />')
 			].join('');
 
 			if (S.is_ie) {
@@ -235,7 +233,6 @@ S = function()
 				in_error = false;
 			}
 		},
-
 
 		dump: function(obj, dump_functions)
 		{
@@ -266,7 +263,19 @@ S = function()
 
 					if (cnt === null)
 					{
-						cnt = S.create('DIV', { id:'__s_debug__', innerHTML: '<pre></pre>' }, { position:'absolute', top:'0', left:'0', backgroundColor:'#FFF', zIndex:'10000' });
+						document.body.appendChild(S.build([
+							'<div style="z-index:99999;position:absolute;top:0;left:0;font-size:10px;font-family:Tahoma;',
+								'font-weight:bold;background-color:#000;color:#FFF;cursor:pointer;cursor:hand;"',
+								' onclick="var s=document.getElementById(\'__s_debug__\').style;',
+								's.display=s.display==\'\'?\'none\':\'\';return false;">#</div>'
+						].join(''))[0]);
+
+						cnt = S.build([
+							'<div id="__s_debug__" style="z-index:99999;position:absolute;top:15px;left:10px;',
+							'border:1px solid #888;background-color:#FFF;overflow:auto;width:800px;height:300px;display:none;">',
+							'<pre style="text-align:left;padding:5px;margin:0;"></pre></div>'
+						].join(''))[0];
+
 						document.body.appendChild(cnt);
 					}
 
@@ -377,7 +386,7 @@ S = function()
 			if (req === null) return null;
 			if (_try_num == null) _try_num = 1;
 
-			if (!send_is_active)
+			if (!send_is_active && callback_func!==null)
 			{
 				for (var i = 0; i < begin_request.length; i++) begin_request[i]();
 				send_is_active = true;
@@ -411,8 +420,6 @@ S = function()
 				{
 					if (req.readyState == 4)
 					{
-						callback_func((req.status==200 || req.status==304) ? req.responseText : null)
-
 						if (send_queue.length != 0)
 						{
 							var msg = send_queue.shift();
@@ -422,6 +429,12 @@ S = function()
 						{
 							for (var i = 0; i < end_request.length; i++) end_request[i]();
 							send_is_active = false;
+						}
+
+						try {
+							callback_func((req.status==200 || req.status==304) ? req.responseText : null)
+						} catch (ex) {
+							alert(SException.get_ex_stack_trace(ex).join("\n"));
 						}
 					}
 				}
@@ -482,6 +495,13 @@ S = function()
 			}
 
 			return element;
+		},
+
+		append_childs: function(el, childs)
+		{
+			for (var i = 0; i < childs.length; i++) {
+				el.appendChild(childs[i]);
+			}
 		},
 
 		require: function(script_url, callback_func)
@@ -580,7 +600,7 @@ S = function()
 
 		pos: function(el)
 		{
-			var res = { top:0, left: 0 };
+			var res = { top:0, left:0 };
 
 			while (el)
 			{
@@ -590,6 +610,17 @@ S = function()
 			}
 
 			return res;
+		},
+
+		mouse_pos: function(ev)
+		{
+			return ((ev.pageX || ev.pageY) ? {
+				left: ev.pageX,
+				top: ev.pageY
+			} : {
+				left: (ev.clientX + document.body.scrollLeft + document.documentElement.scrollLeft),
+				top: (ev.clientY + document.body.scrollTop + document.documentElement.scrollTop)
+			});
 		},
 
 		add_handler: function(element, event_name, event_handler)
@@ -604,6 +635,12 @@ S = function()
 			if (element.removeEventListener) element.removeEventListener(event_name, event_handler, false);
 			else
 			if (element.detachEvent) element.detachEvent('on' + event_name, event_handler);
+		},
+
+		stop_event: function(ev)
+		{
+			ev.cancelBubble = true;
+			if (ev.stopPropagation) ev.stopPropagation();
 		},
 
 		html: function(str)
@@ -1038,86 +1075,88 @@ function SException()
 	}
 }
 
+SException.get_ex_stack_trace = function(ex)
+{
+	if (ex.stack)
+	{
+		var lines = ex.stack.split('\n').slice(1);
+		if (lines.length>0 && lines[lines.length-1].length==0) lines = lines.slice(0, lines.length-1);
+
+		for (var i = 0; i < lines.length; i++)
+		{
+			var ind = lines[i].lastIndexOf('@');
+			if (ind <= 0) continue;
+
+			var args = lines[i].substr(0, ind);
+			var where = lines[i].substr(ind + 1);
+
+			if (args.charAt(0) == '(') args = '{anonymous}' + args;
+
+			lines[i] = where + ' at ' + args;
+		}
+
+		return lines;
+	}
+	else if (window.opera)
+	{
+		var lines = e.message.split('\n');
+		var re = /Line\s+(\d+).*?in\s+(http\S+)(?:.*?in\s+function\s+(\S+))?/i;
+		var i, j, len;
+
+		for (i=4, j=0, len=lines.length; i < len; i += 2) {
+			if (re.test(lines[i])) {
+				lines[j++] = (RegExp.$3 ? (RegExp.$3 + '()@' + RegExp.$2 + RegExp.$1) : ('{anonymous}' + RegExp.$2 + ':' + RegExp.$1)) + ' -- ' + lines[i+1].replace(/^\s+/, '');
+			}
+		}
+
+		lines.splice(j, lines.length - j);
+		return lines;
+	}
+	else
+	{
+		var curr = arguments.callee.caller;
+		var re = /function\s*([\w\-$]+)?\s*\(/i;
+		var stack = [];
+		var j = 0;
+		var fn, args, i;
+
+		while (curr)
+		{
+			fn = (re.test(curr.toString()) ? (RegExp.$1 || '{anonymous}') : '{anonymous}');
+			args = stack.slice.call(curr.arguments);
+			i = args.length;
+
+			while (i--)
+			{
+				switch (typeof args[i])
+				{
+					case 'string':
+						args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';		// "
+						break;
+
+					case 'function':
+						args[i] = 'function';
+						break;
+				}
+			}
+
+			stack[j++] = fn + '(' + args.join() + ')';
+			curr = curr.caller;
+		}
+
+		return stack;
+	}
+}
+
 // thanks goes to http://eriwen.com/javascript/js-stack-trace/ and http://pastie.org/253058.txt
 SException.get_stack_trace = function()
 {
 	var ex;
 
-	try
-	{
+	try {
 		(0)();
-	}
-	catch (ex)
-	{
-		if (ex.stack)
-		{
-			var lines = ex.stack.split('\n').slice(1);
-			if (lines.length>0 && lines[lines.length-1].length==0) lines = lines.slice(0, lines.length-1);
-
-			for (var i = 0; i < lines.length; i++)
-			{
-				var ind = lines[i].lastIndexOf('@');
-				if (ind <= 0) continue;
-
-				var args = lines[i].substr(0, ind);
-				var where = lines[i].substr(ind + 1);
-
-				if (args.charAt(0) == '(') args = '{anonymous}' + args;
-
-				lines[i] = where + ' at ' + args;
-			}
-
-			return lines;
-		}
-		else if (window.opera)
-		{
-			var lines = e.message.split('\n');
-			var re = /Line\s+(\d+).*?in\s+(http\S+)(?:.*?in\s+function\s+(\S+))?/i;
-			var i, j, len;
-
-			for (i=4, j=0, len=lines.length; i < len; i += 2) {
-				if (re.test(lines[i])) {
-					lines[j++] = (RegExp.$3 ? (RegExp.$3 + '()@' + RegExp.$2 + RegExp.$1) : ('{anonymous}' + RegExp.$2 + ':' + RegExp.$1)) + ' -- ' + lines[i+1].replace(/^\s+/, '');
-				}
-			}
-
-			lines.splice(j, lines.length - j);
-			return lines;
-		}
-		else
-		{
-			var curr = arguments.callee.caller;
-			var re = /function\s*([\w\-$]+)?\s*\(/i;
-			var stack = [];
-			var j = 0;
-			var fn, args, i;
-
-			while (curr)
-			{
-				fn = (re.test(curr.toString()) ? (RegExp.$1 || '{anonymous}') : '{anonymous}');
-				args = stack.slice.call(curr.arguments);
-				i = args.length;
-
-				while (i--)
-				{
-					switch (typeof args[i])
-					{
-						case 'string':
-							args[i] = '"' + args[i].replace(/"/g, '\\"') + '"';		// "
-							break;
-
-						case 'function':
-							args[i] = 'function';
-							break;
-					}
-				}
-
-				stack[j++] = fn + '(' + args.join() + ')';
-				curr = curr.caller;
-			}
-
-			return stack;
-		}
+	} catch (ex) {
+		return SException.get_ex_stack_trace(ex);
 	}
 
 	return ['ERROR'];

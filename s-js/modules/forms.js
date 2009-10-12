@@ -4,7 +4,7 @@ SL.set('forms/validators/is_number', 'Must be number', 'en');
 SL.set('forms/validators/number_range', 'Number must be between {0} and {1}', 'en');
 
 SL.set('forms/validators/required', 'Это поле необходимо', 'ru');
-SL.set('forms/validators/compare', 'Должно совпадать с {0}', 'ru');
+SL.set('forms/validators/compare', 'Должно совпадать с полем "{0}"', 'ru');
 SL.set('forms/validators/is_number', 'Должно быть числом', 'ru');
 SL.set('forms/validators/number_range', 'Должно быть числом от {0} до {1}', 'ru');
 

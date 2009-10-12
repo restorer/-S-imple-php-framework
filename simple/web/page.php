@@ -485,7 +485,7 @@ class SPage
 		$this->output_headers();
 		echo $res;
 
-		if  ($this->content_type=='text/html' && DEBUG)
+		if (DEBUG)
 		{
 			dwrite('**[Page processing end]**');
 			dwrite('Page processing takes: ' . number_format(($nw - $this->_start_time), 8));
@@ -499,12 +499,15 @@ class SPage
 				_log("[[ Page info ]]\n\n$debuglog_str\n\n");
 			}
 
-			echo '<div style="z-index:99999;position:absolute;top:0;left:0;font-size:10px;font-family:Tahoma;font-weight:bold;background-color:#000;color:#FFF;cursor:pointer;cursor:hand;"';
-			echo ' onclick="var s=document.getElementById(\'__s_debug__\').style;s.display=s.display==\'\'?\'none\':\'\';return false;">#</div>';
-			echo '<div id="__s_debug__" style="z-index:99999;position:absolute;top:15px;left:10px;border:1px solid #888;background-color:#FFF;overflow:auto;width:800px;height:300px;display:none;">';
-			echo '<pre style="text-align:left;padding:5px;margin:0;" class="s-debug">';
-			echo get_debuglog_html($debuglog_str);
-			echo '</pre></div>';
+			if ($this->content_type=='text/html' && SHOW_DEBUG_INFO)
+			{
+				echo '<div style="z-index:99999;position:absolute;top:0;left:0;font-size:10px;font-family:Tahoma;font-weight:bold;background-color:#000;color:#FFF;cursor:pointer;cursor:hand;"';
+				echo ' onclick="var s=document.getElementById(\'__s_debug__\').style;s.display=s.display==\'\'?\'none\':\'\';return false;">#</div>';
+				echo '<div id="__s_debug__" style="z-index:99999;position:absolute;top:15px;left:10px;border:1px solid #888;background-color:#FFF;overflow:auto;width:800px;height:300px;display:none;">';
+				echo '<pre style="text-align:left;padding:5px;margin:0;" class="s-debug">';
+				echo get_debuglog_html($debuglog_str);
+				echo '</pre></div>';
+			}
 		}
 	}
 

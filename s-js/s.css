@@ -26,13 +26,25 @@
 	font-size: 14px;
 	background-color: #000;
 	z-index: 90010;
+	overflow: auto;
+	width: auto;
+	max-height: 500px;
+	max-width: 1000px;
 }
 
-.s-error span {
+.s-error-close {
+	background-color: red;
+	color: #FFF;
+	padding-left: 0.2em;
+	padding-right: 0.3em;
 	font-weight: bold;
-	text-decoration: underline;
 	cursor: pointer;
 	_cursor: hand;
+}
+
+.s-error-title {
+	white-space: nowrap;
+	padding-right: 10px;
 }
 
 /*
@@ -281,6 +293,7 @@
 	background-color: #FFF;
 	border: 1px solid #A9BFD3;
 	position: relative;
+	_zoom: 1;
 }
 
 .s-nav .s-nav-hdr {
@@ -323,6 +336,13 @@
 	color: #000;
 }
 
+.s-nav .s-nav-hdr span {
+	color: #000;
+	text-decoration: underline;
+	cursor: pointer;
+	_cursor: hand;
+}
+
 .s-nav-tbl th {
 	font-weight: normal;
 	vertical-align: middle;
@@ -336,7 +356,7 @@
 	border-top: 1px solid #FFFFFF;
 	border-bottom: 1px solid #EDEDED;
 	cursor: pointer;
-	cursor: hand;
+	_cursor: hand;
 }
 
 .s-nav-tbl td.s-nav-first {
@@ -384,6 +404,15 @@
 
 .s-nav-tbl .s-nav-act td.s-nav-last {
 	border-right: 1px dotted #A3BAE9;
+}
+
+.s-nav-pager {
+	font-family: Tahoma, Arial;
+	font-size: 12px;
+	background: #A9BFD3;
+	padding: 5px;
+	height: 32px;
+	_height: 42px;
 }
 
 /*
@@ -447,7 +476,6 @@
 .s-form td.s-form-info-msg {
 	color: blue;
 	font-weight: bold;
-	padding-bottom: 10px;
 }
 
 .s-form-first th,
@@ -461,6 +489,7 @@
 
 .s-form table td {
 	padding: 0;
+	font-size: 12px;
 }
 
 /*
@@ -492,4 +521,48 @@
 	background-color: #FFF;
 	border: 1px solid #99BBE8;
 	z-index: 1000;
+}
+
+/*
+ * Pager
+ */
+
+.s-pager table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: 11px;
+}
+
+.s-pager td {
+	padding: 2px;
+	text-align: center;
+	text-decoration: underline;
+	cursor: pointer;
+	_cusror: hand;
+}
+
+.s-pager td.s-pager-sel {
+	background-color: #DFE8F6;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+.s-pager th {
+	padding: 5px 0 0 0;
+	font-size: 1px;
+}
+
+.s-pager-bar {
+	position: relative;
+	height: 8px;
+	background-color: #DFE8F6;
+	cursor: pointer;
+	_cursor: hand;
+}
+
+.s-pager-thumb {
+	position: absolute;
+	top: 0;
+	height: 8px;
+	background-color: #000;
 }

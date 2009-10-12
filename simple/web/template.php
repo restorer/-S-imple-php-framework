@@ -102,7 +102,7 @@ class STemplate
 		$pos = 0;
 		$res = '';
 		$text = '';
-		$tmp_num = 0;
+		// $tmp_num = 0;
 
 		if ($buf != '')
 		{
@@ -192,6 +192,8 @@ class STemplate
 
 				if ($cnt != '')
 				{
+					$cnt = preg_replace("/^else\s+if\s*\(/", 'elseif (', $cnt);
+
 					$stat = '/* internal error */';
 					$post_process = true;
 
@@ -285,14 +287,13 @@ class STemplate
 
 									$arr = trim($spl[0]);
 									$item = (count($spl) > 1 ? trim($spl[1]) : '$item');
-									$counter = (count($spl) > 2 ? trim($spl[2]) : $item.'_ind');
-									$limit = (count($spl) > 3 ? trim($spl[3]) : $item.'_cnt');
+									$item_key = (count($spl) > 2 ? trim($spl[2]) : $item.'_key');
+									$item_ind = (count($spl) > 3 ? trim($spl[3]) : $item.'_ind');
+									$item_cnt = (count($spl) > 4 ? trim($spl[4]) : $item.'_cnt');
 
-									$tmp_num++;
-
-									$stat = "\$__t_${tmp_num}=count(${arr});${limit}=\$__t_${tmp_num};";
-									$stat .= "for(${counter}=0;${counter}<\$__t_${tmp_num};${counter}++){";
-									$stat .= "${item}=${arr}[${counter}];";
+									$stat = "${item_cnt}=count(${arr});${item_ind}=-1;";
+									$stat .= "foreach($arr as ${item_key}=>${item}){";
+									$stat .= "${item_ind}++;";
 								}
 								else if ($op=='for' || $op=='foreach' || $op=='if' || $op=='while' || $op=='elseif' || $op=='elsif' || $op=='each')
 								{

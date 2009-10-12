@@ -12,7 +12,7 @@
 # % **[S]imple** framework starts here :)
 ##
 
-if (!defined('BASE')) define('BASE', str_replace('\\', '/', substr(__FILE__, 0, strlen(__FILE__) - strlen('s/s.php'))));
+if (!defined('BASE')) define('BASE', str_replace('\\', '/', substr(__FILE__, 0, strlen(__FILE__) - strlen('s/s.php'))));	// '
 if (!defined('S_BASE')) define('S_BASE', BASE.'s/');
 
 require_once(S_BASE.'core/configuration.php');
@@ -29,6 +29,7 @@ function expand_tilde($path) {
 if (!conf_has('debug')) conf_set('debug', true);
 if (!conf_has('log_errors')) conf_set('log_errors', false);
 if (!conf_has('log_debug_info')) conf_set('log_debug_info', false);
+if (!conf_has('show_debug_info')) conf_set('show_debug_info', true);
 if (!conf_has('modules.autoload')) conf_set('modules.autoload', array());
 
 if (!conf_has('log.path')) conf_set('log.path', '~cache/debug.log');
@@ -37,6 +38,7 @@ conf_set('log.path', expand_tilde(conf('log.path')));
 define('DEBUG', conf('debug'));
 define('LOG_ERRORS', conf('log_errors'));
 define('LOG_DEBUG_INFO', conf('log_debug_info'));
+define('SHOW_DEBUG_INFO', conf('show_debug_info'));
 
 if (!conf_has('use_cgi')) conf_set('use_cgi', true);
 if (!conf_has('http.port')) conf_set('http.port', 80);

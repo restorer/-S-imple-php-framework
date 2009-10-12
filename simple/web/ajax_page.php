@@ -12,7 +12,7 @@ require_once(S_BASE . 'web/page.php');
 require_once(S_BASE . 'data/json.php');
 
 ##
-# [AJAXPAGE_INIT] when ajax call found, AjaxPageInit event called. If you will call break_flow in event handler, aj function will not be called (this is useful for authentication)
+# [AJ_INIT] when ajax call found, AjaxPageInit event called. If you will call break_flow in event handler, aj function will not be called (this is useful for authentication)
 ##
 define('AJ_INIT', 'aj_init');
 

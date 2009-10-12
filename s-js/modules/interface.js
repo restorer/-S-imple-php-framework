@@ -145,11 +145,12 @@ SButton = function()
 	this.cls_pressed = 's-btn-pressed';
 	this.cls_disabled = 's-btn-disabled';
 
-	this.init = function(text, click_handler, inner_cls)
+	this.init = function(text, click_handler, inner_cls, enabled)
 	{
 		this._text = ((typeof(text)==$undef || text===null) ? '' : String(text));
 		this._click_handler = (typeof(click_handler)==$undef ? null : click_handler);
 		this._inner_cls = ((typeof(inner_cls)==$undef || inner_cls===null) ? '' : String(inner_cls));
+		this._enabled = ((typeof(enabled)==$undef || enabled===null) ? true : enabled);
 	}
 
 	this._render_dom = function()
@@ -325,7 +326,10 @@ SInput = function()
 					' onblur="S.rm_class(this,\'s-inp-focus\')" />'
 			].join(''))[0];
 		}
+	}
 
+	this._update_dom = function()
+	{
 		this._dom.value = this._value;
 	}
 
@@ -616,23 +620,39 @@ SNavigator = function()
 	this._click_handler = null;
 	this._max_height = 0;
 	this._fixed_height = 0;
+	this._use_pager = false;
+	this._show_pages = 5;
+	this._pages_count = 1;
+	this._curr_page = 0;
 
+	this._sortable = {};
+	this._sort_field = { field:'', dir:true };
 	this._rows_hash = {};
 	this._row_header = null;
 	this._row_empty = null;
 	this._div_header = null;
 	this._tbody = null;
+	this._div_pager = null;
+	this._pager = null;
+	this._sort_handler = null;
+	this._page_handler = null;
 
 	/*
 	 * (max_height==0 && fixed_height==true) has no sense
 	 * (max_height>0 && fixed_height==false) may incorretly work under IE
 	 */
-	this.init = function(header, click_handler, max_height, fixed_height)
+	this.init = function(header, click_handler, max_height, fixed_height, use_pager)
 	{
 		this._header = header;
 		this._click_handler = (typeof(click_handler)==$undef ? null : click_handler);
 		this._max_height = ((typeof(max_height)==$undef || max_height==null) ? 0 : max_height);
 		this._fixed_height = ((typeof(fixed_height)==$undef || fixed_height==null) ? false : fixed_height);
+		this._use_pager = ((typeof(use_pager)==$undef || use_pager==null) ? false : use_pager);
+	}
+
+	this._get_sort_arr = function(dir)
+	{
+		return (dir ? '&uarr;' : '&darr;');
 	}
 
 	this._render_dom = function()
@@ -662,8 +682,23 @@ SNavigator = function()
 			if (i == 0) th_cls = (th_cls + ' s-nav-first').trim();
 			if (i == this._header.length-1) th_cls = (th_cls + ' s-nav-last').trim();
 
-			res.push(th_cls=='' ? '<th>' : '<th class="{0}">'.format(td_cls));
-			res.push(this._header[i].title.length ? this._header[i].title : '&nbsp;');
+			res.push(th_cls=='' ? '<th>' : '<th class="{0}">'.format(th_cls));
+			var hdr_title = (this._header[i].title.length ? this._header[i].title : '&nbsp;');
+
+			if (typeof(this._header[i].sortable)!=$undef && this._header[i].sortable)
+			{
+				res.push('<span>{0}</span> <strong>{1}</strong>'.format(hdr_title, this._get_sort_arr(true)));
+				this._sortable[this._header[i].field] = true;
+
+				if (!this._sort_field.field) {
+					this._sort_field.field = this._header[i].field;
+				}
+			}
+			else
+			{
+				res.push(hdr_title);
+			}
+
 			res.push('</th>');
 		}
 
@@ -702,6 +737,18 @@ SNavigator = function()
 
 		res.push('</table>');
 		res.push('</div>');
+
+		if (this._use_pager)
+		{
+			res.push('<div class="s-nav-pager"></div>');
+
+			this._pager = $new(SPager)
+			this._pager.set_show_pages(this._show_pages);
+			this._pager.set_pages_count(this._pages_count);
+			this._pager.set_curr_page(this._curr_page);
+			this._pager.on_page_changed = this._page_handler;
+		}
+
 		res.push('<div class="s-nav-hdr">');
 
 		for (var i = 0; i < this._header.length; i++)
@@ -712,7 +759,14 @@ SNavigator = function()
 			if (i == this._header.length-1) h_cls = (h_cls + ' s-nav-last').trim();
 
 			res.push(h_cls=='' ? '<div>' : '<div class="{0}">'.format(h_cls));
-			res.push(this._header[i].title.length ? this._header[i].title : '&nbsp;');
+			var hdr_title = (this._header[i].title.length ? this._header[i].title : '&nbsp;');
+
+			if (typeof(this._header[i].sortable)!=$undef && this._header[i].sortable) {
+				res.push('<span __s_fld="{0}">{1}</span> <strong>{2}</strong>'.format(this._header[i].field, hdr_title));
+			} else {
+				res.push(hdr_title);
+			}
+
 			res.push('</div>');
 		}
 
@@ -729,6 +783,20 @@ SNavigator = function()
 		row.onclick = SNavigator.on_click;
 	}
 
+	this._update_sort_arrows = function()
+	{
+		if (this._row_header == null) return;
+
+		for (var i= 0; i < this._header.length; i++)
+		{
+			var hdr = this._div_header.childNodes[i];
+
+			if (typeof(this._sortable[this._header[i].field]) != $undef) {
+				hdr.getElementsByTagName('strong')[0].innerHTML = (this._sort_field.field == this._header[i].field ? this._get_sort_arr(this._sort_field.dir) : '&nbsp;');
+			}
+		}
+	}
+
 	this._update_header = function()
 	{
 		if (this._row_header == null) return;
@@ -743,7 +811,13 @@ SNavigator = function()
 
 			hdr.style.left = th.offsetLeft + 'px';
 			hdr.style.width = wdt + 'px';
+
+			if (typeof(this._sortable[this._header[i].field]) != $undef) {
+				hdr.getElementsByTagName('span')[0].onclick = SNavigator.on_sort_click;
+			}
 		}
+
+		this._update_sort_arrows();
 	}
 
 	this._update_dom = function()
@@ -753,7 +827,13 @@ SNavigator = function()
 		this._tbody = this._dom.childNodes[0].childNodes[0].childNodes[0];
 		this._row_header = this._tbody.childNodes[0];
 		this._row_empty = this._tbody.childNodes[1];
-		this._div_header = this._dom.childNodes[1];
+
+		this._div_header = this._dom.childNodes[this._use_pager ? 2 : 1];
+		this._div_pager = (this._use_pager ? this._dom.childNodes[1] : null);
+
+		if (this._use_pager) {
+			this._pager.render(this._div_pager);
+		}
 
 		var table_rows = this._tbody.childNodes;
 
@@ -902,6 +982,73 @@ SNavigator = function()
 	{
 		return this._rows.length;
 	}
+
+	this.get_curr_page = function()
+	{
+		return (this._pager == null ? this._curr_page : this._pager.get_curr_page());
+	}
+
+	this.set_curr_page = function(page)
+	{
+		if (this._pager == null) {
+			this._curr_page = page;
+		} else {
+			this._pager.set_curr_page(page);
+		}
+	}
+
+	this.get_pages_count = function()
+	{
+		return (this._pager == null ? this._pages_count : this._pager.get_pages_count());
+	}
+
+	this.set_pages_count = function(pages)
+	{
+		if (this._pager == null) {
+			this._pages_count = pages;
+		} else {
+			this._pager.set_pages_count(pages);
+		}
+	}
+
+	this.get_show_pages = function()
+	{
+		return (this._pager == null ? this._show_pages : this._pager.get_show_pages());
+	}
+
+	this.set_show_pages = function(show_pages)
+	{
+		if (this._pager == null) {
+			this._show_pages = show_pages;
+		} else {
+			this._pager.set_show_pages(show_pages);
+		}
+	}
+
+	this.set_sort_handler = function(func)
+	{
+		this._sort_handler = func;
+	}
+
+	this.set_page_handler = function(func)
+	{
+		if (this._pager == null) {
+			this._page_handler = func;
+		} else {
+			this._pager.on_page_changed = func;
+		}
+	}
+
+	this.set_sort_field = function(sort_fld)
+	{
+		if (typeof(sort_fld.field) != $undef) this._sort_field.field = sort_fld.field;
+		if (typeof(sort_fld.dir) != $undef) this._sort_field.dir = sort_fld.dir;
+	}
+
+	this.get_sort_field = function()
+	{
+		return this._sort_field;
+	}
 };
 
 SNavigator.on_mouse_over = function()
@@ -923,6 +1070,21 @@ SNavigator.on_click = function()
 		var id = this.getAttribute('__s_id');
 		el._click_handler(id);
 	}
+}
+
+SNavigator.on_sort_click = function()
+{
+	var el = this.parentNode.parentNode.parentNode.__s_el;
+	var fld = this.getAttribute('__s_fld');
+
+	if (el._sort_field.field == fld) {
+		el._sort_field.dir = !el._sort_field.dir;
+	} else {
+		el._sort_field = { field:fld, dir:true }
+	}
+
+	el._update_sort_arrows();
+	if (el._sort_handler) el._sort_handler(el._sort_field);
 }
 
 SPopupLayer = function()
@@ -1311,4 +1473,189 @@ SDropDown = function()
 	{
 		this._do_set('value', value);
 	}
+}
+
+SPager = function()
+{
+	$extend(this, SElement);
+
+	this._show_pages = 5;
+	this._curr_page = 0;
+	this._pages_count = 1;
+
+	this._thumb_bar = null;
+	this._thumb = null;
+	this._pos = 0;
+	this._thumb_wdt = 0;
+	this._max_pos = 0;
+	this._ev_added = false;
+
+	this.on_page_changed = null;
+
+	this.init = function()
+	{
+	}
+
+	this._render_dom = function()
+	{
+		this._dom = S.build('<div class="s-pager"></div>')[0];
+		this._dom.__s_el = this;
+	}
+
+	this._update_dom = function()
+	{
+		var cells_count = Math.max(1, Math.min(this._show_pages, this._pages_count));
+		var res = '<table><tr>';
+		var perc = Math.floor(100 / cells_count);
+
+		for (var i = 0; i < cells_count; i++) {
+			res += '<td width="{0}%"></td>'.format(perc);
+		}
+
+		res += '</tr><th colspan="{0}"><div class="s-pager-bar"><div class="s-pager-thumb">&nbsp;</div></div></th></tr></table>'.format(cells_count);
+		this._dom.innerHTML = res;
+
+		this._thumb_bar = this._dom.childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0];
+		this._thumb_bar.onmousedown = SPager.on_mouse_down;
+
+		this._thumb = this._dom.childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0].childNodes[0];
+		this._thumb.style.width = this._thumb_wdt + '%';
+		this._thumb.style.left = this._pos + '%';
+
+		var cells = this._dom.childNodes[0].childNodes[0].childNodes[0].childNodes;
+		for (var i = 0; i < cells_count; i++) { cells[i].onclick = SPager.on_click; }
+
+		this._update_page();
+	}
+
+	this._update_page = function()
+	{
+		var page = Math.max(0, Math.min(this._curr_page, this._pages_count-1));
+		var cells_count = Math.max(1, Math.min(this._show_pages, this._pages_count));
+		var thumb_pages = Math.max(1, this._pages_count - cells_count);
+		var min_page = Math.floor(this._pos * thumb_pages / this._max_pos);
+		var cells = this._dom.childNodes[0].childNodes[0].childNodes[0].childNodes;
+
+		for (var i = 0; i < cells_count; i++)
+		{
+			cells[i].innerHTML = (min_page + i + 1);
+			cells[i].setAttribute('__s_page', min_page + i);
+			cells[i].className = (min_page+i == page ? 's-pager-sel' : '');
+		}
+	}
+
+	this.get_show_pages = function()
+	{
+		return this._show_pages;
+	}
+
+	this.set_show_pages = function(show_pages)
+	{
+		this._show_pages = Math.max(1, show_pages);
+		if (this._dom != null) this._update_dom();
+	}
+
+	this.get_curr_page = function()
+	{
+		return Math.max(0, Math.min(this._curr_page, this._pages_count-1));
+	}
+
+	this.set_curr_page = function(page)
+	{
+		var page = Math.max(0, Math.min(page, this._pages_count-1));
+		this._curr_page = page;
+
+		var cells_count = Math.max(1, Math.min(this._show_pages, this._pages_count));
+		var min_page = Math.max(0, page - Math.floor(cells_count / 2));
+		if (min_page + cells_count > this._pages_count) min_page = this._pages_count - cells_count;
+
+		var thumb_pages = Math.max(1, this._pages_count - cells_count);
+		this._pos = (min_page * this._max_pos / thumb_pages);
+
+		if (this._dom != null)
+		{
+			this._thumb.style.left = this._pos + '%';
+			this._update_page();
+		}
+	}
+
+	this.get_pages_count = function()
+	{
+		return this._pages_count;
+	}
+
+	this.set_pages_count = function(pages)
+	{
+		this._pages_count = Math.max(1, pages);
+
+		this._thumb_wdt = Math.floor(Math.max(1, this._show_pages * 100 / this._pages_count));
+		this._max_pos = 100 - this._thumb_wdt;
+		if (this._pos > this._max_pos) { this._pos = this._max_pos; }
+
+		if (this._dom != null) this._update_dom();
+	}
+}
+
+SPager.on_click = function()
+{
+	var el = this.parentNode.parentNode.parentNode.parentNode.__s_el;
+	el.set_curr_page(this.getAttribute('__s_page'));
+	if (el.on_page_changed) el.on_page_changed(el.get_curr_page());
+}
+
+SPager.on_mouse_down = function(ev)
+{
+	if (!ev) ev = event;
+	var el = this.parentNode.parentNode.parentNode.parentNode.parentNode.__s_el;
+
+	S.stop_event(ev);
+	var el_bar = this;
+
+	function update_pos(ev)
+	{
+		var bar_pos = S.pos(el_bar);
+		var mouse_pos = S.mouse_pos(ev);
+
+		var xpos = mouse_pos.left - bar_pos.left;
+
+		var min_xpos = Math.floor(el_bar.offsetWidth * el._thumb_wdt / 200);
+		var max_xpos = el_bar.offsetWidth - min_xpos;
+		var act_wdt = Math.max(1, max_xpos - min_xpos);
+
+		if (xpos > max_xpos) xpos = max_xpos;
+		if (xpos < min_xpos) xpos = min_xpos;
+
+		el._pos = Math.floor(Math.max(0, xpos - min_xpos) * el._max_pos / act_wdt);
+		el._thumb.style.left = el._pos + '%';
+		el._update_page();
+	}
+
+	var on_select_start = function()
+	{
+		return false;
+	};
+
+	var on_mouse_move = function(ev)
+	{
+		S.stop_event(ev);
+		update_pos(ev);
+	};
+
+	var on_mouse_up = function(ev)
+	{
+		S.rm_handler(document, 'selectstart', on_select_start);
+		S.rm_handler(document, 'mousemove', on_mouse_move);
+		S.rm_handler(document, 'mouseup', on_mouse_up);
+		el._ev_added = false;
+	};
+
+	if (!el._ev_added)
+	{
+		S.add_handler(document, 'selectstart', on_select_start);
+		S.add_handler(document, 'mousemove', on_mouse_move);
+		S.add_handler(document, 'mouseup', on_mouse_up);
+		el._ev_added = true;
+	}
+
+	update_pos(ev);
 }
