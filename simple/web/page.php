@@ -548,7 +548,7 @@ class SPage
 
 	protected function error_handler()
 	{
-		$tpl =& new STemplate();
+		$tpl = new STemplate();
 		$tpl->vars =& $this->vars;
 		$tpl->controls =& $this->controls;
 
