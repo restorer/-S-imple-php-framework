@@ -72,21 +72,21 @@ class SDB
 	}
 
 	##
-	# = public static string escape(string $str)
+	# = public static string quote(string $str)
 	# Wrapper to db driver
 	##
-	public static function escape($str) {
+	public static function quote($str) {
 		$db = SDB::get_current();
-		return $db->escape($str);
+		return $db->quote($str);
 	}
 
 	##
-	# = public static string like_escape(string $str)
+	# = public static string quote_like(string $str)
 	# Wrapper to db driver
 	##
-	public static function like_escape($str) {
+	public static function quote_like($str) {
 		$db = SDB::get_current();
-		return $db->like_escape($str);
+		return $db->quote_like($str);
 	}
 
 	##
