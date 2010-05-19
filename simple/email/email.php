@@ -75,6 +75,11 @@ class SEmail
 	public $body = '';
 
 	##
+	# [$html_email] true by default.
+	##
+	public $html_email = true;
+
+	##
 	# [$headers] Email headers. Usually you don't need to set this field manually
 	##
 	public $headers = array();	// '
@@ -416,28 +421,34 @@ class SEmail
 		return (strlen($this->from_name) ? ($this->from_name . ' <' . $this->from_email . '>') : $this->from_email);
 	}
 
-	protected function validate_email($email_str)
+	public static function validate_email($email_str)
 	{
 		return preg_match("/^[-+\\.0-9=a-z_]+@([-0-9a-z]+\\.)+([0-9a-z]){2,4}$/i", $email_str);
 	}
 
 	protected function send_raw()
 	{
-		if (!$this->validate_email($this->from_email)) return 'Invalid "From" email';
-		if (!$this->validate_email($this->to)) return 'Invalid "To" email';
+		if (!SEmail::validate_email($this->from_email)) return 'Invalid "From" email';
+		if (!SEmail::validate_email($this->to)) return 'Invalid "To" email';
 
 		$from = $this->make_from();
 
 		$hdr  = 'From: ' . $from . "\r\n";
 		$hdr .= 'Return-Path: ' . $this->from_email . "\r\n";
 		$hdr .= 'Errors-To: ' . $this->from_email . "\r\n";
-		$hdr .= "MIME-Version: 1.0\r\n";
+
+		if ($this->html_email) {
+			$hdr .= "MIME-Version: 1.0\r\n";
+		}
 
 		foreach ($this->headers as $key=>$val) $hdr .= $this->santize_string($key) . ': ' . $this->santize_string($val) . "\r\n";
 
 		if (!count($this->attachments))
 		{
-			$hdr .= 'Content-Type: text/html; charset=' . $this->charset . "\r\n";
+			if ($this->html_email) {
+				$hdr .= 'Content-Type: text/html; charset=' . $this->charset . "\r\n";
+			}
+
 			$body = $this->body;
 		}
 		else

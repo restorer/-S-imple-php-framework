@@ -9,7 +9,7 @@
  */
 
 require_once(S_BASE.'web/template.php');
-require_once(S_BASE.'web/control.php');
+require_once(S_BASE.'web/include_control.php');
 
 ##
 # [PAGE_INIT] Page init event, called before form handling
@@ -19,28 +19,22 @@ define('PAGE_INIT', 'init');
 ##
 # [PAGE_PRE_RENDER] Page pre-render event, called before render
 ##
-define('PAGE_PRE_RENDER', 'prerender');
+define('PAGE_PRE_RENDER', 'pre_render');
+
+##
+# [PAGE_FILTER_RENDER] Post-render filter.
+# Post-render filter called after page render, but before design page render.
+# (!) Render filter called in reverse order.
+# (!) This filter called at PAGE_FLOW_RENDER state, so changing _flow or calling error() or redirect() will have no effect.
+# | function on_filter_render(string $content) { return "[Filtered]$content[/Filtered]"; }
+##
+define('PAGE_FILTER_RENDER', 'filter_render');
 
 define('PAGE_FLOW_BREAK', 0);
 define('PAGE_FLOW_NORMAL', 1);
 define('PAGE_FLOW_ERROR', 2);
 define('PAGE_FLOW_REDIRECT', 3);
 define('PAGE_FLOW_RENDER', 4);
-
-##
-# [CSS] Path to css (for using in templates)
-##
-define('CSS', ROOT.'css/');
-
-##
-# [JS] Path to javascripts (for using in templates)
-##
-define('JS', ROOT.'js/');
-
-##
-# [IMG] Path to images (for using in templates)
-##
-define('IMG', ROOT.'img/');
 
 ##
 # .begin
@@ -111,9 +105,20 @@ class SPage
 			}
 		}
 
-		$this->template_name = dirname($_SERVER['SCRIPT_FILENAME']) . '/' . $this->script_name() . '.tpl';
-		$this->design_page_name = BASE.'templates/design.tpl';
-		$this->error_page_name = BASE.'templates/error.tpl';
+		$this->fill_templates_paths();
+	}
+
+	protected function fill_templates_paths()
+	{
+		if (conf('page.tpl.custom')) {
+			$tpl_dir = dirname(substr($_SERVER['SCRIPT_FILENAME'], strlen(BASE)));
+			$this->template_name = conf('page.tpl.custom') . (strlen($tpl_dir) && $tpl_dir!='.' ? "$tpl_dir/" : '') . $this->script_name() . '.tpl';
+		} else {
+			$this->template_name = dirname($_SERVER['SCRIPT_FILENAME']) . '/' . $this->script_name() . '.tpl';
+		}
+
+		$this->design_page_name = conf('page.tpl.base') . 'base.tpl';
+		$this->error_page_name = conf('page.tpl.base') . 'error.tpl';
 	}
 
 	##
@@ -413,6 +418,7 @@ class SPage
 	protected function _init()
 	{
 		$this->_process_post();
+		$this->add_control('include', new SIncludeControl());
 		if (!array_key_exists(PAGE_INIT, $this->_events)) return;
 
 		foreach ($this->_events[PAGE_INIT] as $method)
@@ -515,7 +521,8 @@ class SPage
 	# = protected string render_result()
 	# Render page to string. In most of cases, you don't need to call this method directly
 	##
-	protected function render_result()	// '
+	// ' fix mc highlighter
+	protected function render_result()
 	{
 		if (!array_key_exists('self', $this->vars)) {
 			$this->vars['self'] = $this;
@@ -526,6 +533,15 @@ class SPage
 		$tpl->controls =& $this->controls;
 
 		$res = $tpl->process($this->template_name);
+
+		if (array_key_exists(PAGE_FILTER_RENDER, $this->_events))
+		{
+			$filters = array_reverse($this->_events[PAGE_FILTER_RENDER]);
+
+			foreach ($filters as $method) {
+				$res = call_user_func(array($this, $method), $res);
+			}
+		}
 
 		if (strlen($this->design_page_name) && @file_exists($this->design_page_name))
 		{
@@ -566,6 +582,12 @@ class SPage
 
 	protected function process_flow()
 	{
+		if (DEBUG && LOG_DEBUG_INFO)
+		{
+			$debuglog_str = dflush_str();
+			_log("[[ Page info ]]\n\n$debuglog_str\n\n");
+		}
+
 		switch ($this->_flow)
 		{
 			case PAGE_FLOW_ERROR: $this->error_handler(); break;

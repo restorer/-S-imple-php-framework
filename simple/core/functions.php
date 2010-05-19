@@ -162,7 +162,7 @@ function error($message, $rm_from_backtrace=false)
 		echo "Server is out to lunch. Please wait about 5 minutes and try to reload page. If it doesn't help, please contact administrator.";
 	}
 
-	die;
+	die();
 }
 
 function echo_debug()

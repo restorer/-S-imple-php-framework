@@ -52,6 +52,8 @@ if (!conf_has('regexp.date')) conf_set('regexp.date', '/^(\d\d).(\d\d).(\d\d\d\d
 if (!conf_has('regexp.datetime')) conf_set('regexp.datetime', '/^(\d\d).(\d\d).(\d\d\d\d).(\d\d):(\d\d)(:(\d\d))?$/');
 if (!conf_has('cache.path')) conf_set('cache.path', BASE.'cache/');
 if (!conf_has('set_utf8')) conf_set('set_utf8', true);
+if (!conf_has('page.tpl.custom')) conf_set('page.tpl.custom', '');
+if (!conf_has('page.tpl.base')) conf_set('page.tpl.base', BASE . 'templates/');
 
 if (!conf_has('mail.send')) conf_set('mail.send', false);
 if (!conf_has('mail.type')) conf_set('mail.type', 'mail');

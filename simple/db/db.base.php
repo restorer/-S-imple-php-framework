@@ -411,11 +411,11 @@ abstract class SDBBase
 	public abstract function quote_names($name);
 
 	##
-	# = protected string escape_like(string $str)
+	# = public string escape_like(string $str)
 	# Escape string to use in like expressions (additionally escapes '%' and '_' symbols)
 	# **TODO:** Check escaping method in sqlite
 	##
-	protected function escape_like($str)
+	public function escape_like($str)
 	{
 		return str_replace(array('%', '_'), array('\\%', '\\_'), $str);
 	}

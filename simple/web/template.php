@@ -347,7 +347,7 @@ class STemplate
 				return call_user_func_array(array($this, '_echo'), $args);
 
 			default:
-				if (!array_key_exists($name, $this->controls)) throw new Exception("Control $name not found.");
+				if (!array_key_exists($name, $this->controls)) throw new Exception("Control \"$name\" not found.");
 				return call_user_func_array(array($this->controls[$name], 'render'), $args);
 		}
 	}
