@@ -105,6 +105,79 @@ String.prototype.rtrim = function(str)
 	return this.replace(/\s\s*$/, '');
 }
 
+Array.prototype.first = function() {
+	return this[0];
+}
+
+Array.prototype.last = function() {
+	return this[this.length - 1];
+}
+
+Array.prototype.apply_map = function(block) {
+	for (var i = 0; i < this.length; i++) {
+		this[i] = block(this[i]);
+	}
+
+	return this;
+}
+
+Array.prototype.map = function(block) {
+	var res = [];
+
+	for (var i = 0; i < this.length; i++) {
+		res[i] = block(this[i]);
+	}
+
+	return res;
+}
+
+Array.prototype.reject = function(block) {
+	var ind = 0;
+
+	while (ind < this.length) {
+		if (block(this[ind])) {
+			this.splice(ind, 1);
+		} else {
+			ind++;
+		}
+	}
+
+	return this;
+}
+
+Array.prototype.empty = function() {
+	return (this.length == 0);
+}
+
+Date.getNow = function() {
+	return (new Date());
+}
+
+Date.prototype.format = function(fmt) {
+	var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+	fmt = fmt.replace(/\{M\}/g, months[this.getMonth()]);
+	fmt = fmt.replace(/\{dd\}/g, (this.getDate() < 10 ? '0' : '') + this.getDate());
+	fmt = fmt.replace(/\{yyyy\}/g, this.getFullYear());
+
+	return fmt;
+}
+
+window.location.getHost = function() {
+	var l = window.location;
+	var res = l.protocol + '//' + l.hostname;
+
+	if ( l.port && !((l.protocol=='http' && l.port=='80') || (l.protocol=='https' && l.port=='443')) ) {
+		res += ':' + l.port;
+	}
+
+	return res;
+}
+
+window.location.getUrl = function() {
+	return (window.location.getHost() + window.location.pathname);
+}
+
 SL = function()
 {
 	var current_locale = 'en';

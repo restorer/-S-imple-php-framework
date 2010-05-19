@@ -624,6 +624,7 @@ SNavigator = function()
 	this._show_pages = 5;
 	this._pages_count = 1;
 	this._curr_page = 0;
+	this._multiple_select = false;
 
 	this._sortable = {};
 	this._sort_field = { field:'', dir:true };
@@ -640,14 +641,18 @@ SNavigator = function()
 	/*
 	 * (max_height==0 && fixed_height==true) has no sense
 	 * (max_height>0 && fixed_height==false) may incorretly work under IE
+	 *
+	 * header example:
+	 * [{ title: 'Title', sortable: false, field: 'field', post_renderer: function(domElement, field, row) {} }]
 	 */
-	this.init = function(header, click_handler, max_height, fixed_height, use_pager)
+	this.init = function(header, click_handler, max_height, fixed_height, use_pager, multiple_select)
 	{
 		this._header = header;
 		this._click_handler = (typeof(click_handler)==$undef ? null : click_handler);
 		this._max_height = ((typeof(max_height)==$undef || max_height==null) ? 0 : max_height);
 		this._fixed_height = ((typeof(fixed_height)==$undef || fixed_height==null) ? false : fixed_height);
 		this._use_pager = ((typeof(use_pager)==$undef || use_pager==null) ? false : use_pager);
+		this._multiple_select = ((typeof(multiple_select)==$undef || multiple_select==null) ? false: multiple_select);
 	}
 
 	this._get_sort_arr = function(dir)
@@ -675,11 +680,18 @@ SNavigator = function()
 			'<tr>'
 		];
 
+		if (this._multiple_select)
+		{
+			res.push('<th class="s-nav-first s-nav-chb">');
+			res.push('&nbsp;');
+			res.push('</th>');
+		}
+
 		for (var i = 0; i < this._header.length; i++)
 		{
 			var th_cls = '';
 
-			if (i == 0) th_cls = (th_cls + ' s-nav-first').trim();
+			if (i == 0 && !this._multiple_select) th_cls = (th_cls + ' s-nav-first').trim();
 			if (i == this._header.length-1) th_cls = (th_cls + ' s-nav-last').trim();
 
 			res.push(th_cls=='' ? '<th>' : '<th class="{0}">'.format(th_cls));
@@ -713,11 +725,18 @@ SNavigator = function()
 			var data = this._rows[i].data;
 			res.push('<tr{0} __s_id="{1}">'.format((i%2==0 ? '' : ' class="s-nav-alt"'), S.html(String(data[this._id_field]))));
 
+			if (this._multiple_select)
+			{
+				res.push('<td class="s-nav-first s-nav-chb">');
+				res.push('<input type="checkbox" value="1" />');
+				res.push('</td>');
+			}
+
 			for (var j = 0; j < this._header.length; j++)
 			{
 				var td_cls = '';
 
-				if (j == 0) td_cls = (td_cls + ' s-nav-first').trim();
+				if (j == 0 && !this._multiple_select) td_cls = (td_cls + ' s-nav-first').trim();
 				if (j == this._header.length-1) td_cls = (td_cls + ' s-nav-last').trim();
 
 				if (td_cls == '') res.push('<td>');
@@ -751,11 +770,18 @@ SNavigator = function()
 
 		res.push('<div class="s-nav-hdr">');
 
+		if (this._multiple_select)
+		{
+			res.push('<div class="s-nav-first s-nav-chb">');
+			res.push('<input type="checkbox" value="1" />');
+			res.push('</div>');
+		}
+
 		for (var i = 0; i < this._header.length; i++)
 		{
 			var h_cls = '';
 
-			if (i == 0) h_cls = (h_cls + ' s-nav-first').trim();
+			if (i == 0 && !this._multiple_select) h_cls = (h_cls + ' s-nav-first').trim();
 			if (i == this._header.length-1) h_cls = (h_cls + ' s-nav-last').trim();
 
 			res.push(h_cls=='' ? '<div>' : '<div class="{0}">'.format(h_cls));
@@ -781,15 +807,22 @@ SNavigator = function()
 		row.onmouseover = SNavigator.on_mouse_over;
 		row.onmouseout = SNavigator.on_mouse_out;
 		row.onclick = SNavigator.on_click;
+
+		if (this._multiple_select)
+		{
+			row.childNodes[0].onclick = SNavigator.on_chb_td_click;
+			row.childNodes[0].getElementsByTagName('INPUT')[0].onclick = SNavigator.on_chb_click;
+		}
 	}
 
 	this._update_sort_arrows = function()
 	{
 		if (this._row_header == null) return;
+		var off = (this._multiple_select ? 1 : 0);
 
 		for (var i= 0; i < this._header.length; i++)
 		{
-			var hdr = this._div_header.childNodes[i];
+			var hdr = this._div_header.childNodes[i + off];
 
 			if (typeof(this._sortable[this._header[i].field]) != $undef) {
 				hdr.getElementsByTagName('strong')[0].innerHTML = (this._sort_field.field == this._header[i].field ? this._get_sort_arr(this._sort_field.dir) : '&nbsp;');
@@ -800,8 +833,9 @@ SNavigator = function()
 	this._update_header = function()
 	{
 		if (this._row_header == null) return;
+		var off = (this._multiple_select ? 1 : 0);
 
-		for (var i = 0; i < this._header.length; i++)
+		for (var i = 0; i < this._header.length + off; i++)
 		{
 			var th = this._row_header.childNodes[i];
 			var hdr = this._div_header.childNodes[i];
@@ -812,8 +846,13 @@ SNavigator = function()
 			hdr.style.left = th.offsetLeft + 'px';
 			hdr.style.width = wdt + 'px';
 
-			if (typeof(this._sortable[this._header[i].field]) != $undef) {
-				hdr.getElementsByTagName('span')[0].onclick = SNavigator.on_sort_click;
+			if (off != 0 && i == 0) {
+				hdr.onclick = SNavigator.on_chb_td_click;
+				hdr.getElementsByTagName('input')[0].onclick = SNavigator.on_chb_click;
+			} else if (off == 0 || i > 0) {
+				if (typeof(this._sortable[this._header[i - off].field]) != $undef) {
+					hdr.getElementsByTagName('span')[0].onclick = SNavigator.on_sort_click;
+				}
 			}
 		}
 
@@ -835,6 +874,7 @@ SNavigator = function()
 			this._pager.render(this._div_pager);
 		}
 
+		var off = (this._multiple_select ? 1 : 0);
 		var table_rows = this._tbody.childNodes;
 
 		for (var i = 2; i < table_rows.length; i++)
@@ -848,7 +888,7 @@ SNavigator = function()
 			for (var j = 0; j < this._header.length; j++)
 			{
 				var hdr = this._header[j];
-				if (typeof(hdr.post_render) != $undef) hdr.post_render(rows[i].childNodes[j], row.data[hdr.field], row.data);
+				if (typeof(hdr.post_render) != $undef) hdr.post_render(table_rows[i].childNodes[j + off], row.data[hdr.field], row.data);
 			}
 		}
 
@@ -875,13 +915,21 @@ SNavigator = function()
 			if (this._rows.length % 2 != 0) tr.className = 's-nav-alt';
 			if (this._active_id == data[this._id_field]) tr.className += ' s-nav-act';
 
+			if (this._multiple_select)
+			{
+				var td = S.create('TD');
+				td.className = 's-nav-first s-nav-chb';
+				td.innerHTML = '<input type="checkbox" value="1" />';
+				tr.appendChild(td);
+			}
+
 			for (var i = 0; i < this._header.length; i++)
 			{
 				var td = S.create('TD');
 
 				var td_cls = '';
 
-				if (i == 0) S.add_class(td, 's-nav-first');
+				if (i == 0 && !this._multiple_select) S.add_class(td, 's-nav-first');
 				if (i == this._header.length-1) S.add_class(td, 's-nav-last');
 
 				var hdr = this._header[i];
@@ -925,6 +973,11 @@ SNavigator = function()
 		return (typeof(this._rows[ind])==$undef ? null : this._rows[ind].data);
 	}
 
+	this.get_rows = function()
+	{
+		return this._rows.map(function(item){ return item.data });
+	}
+
 	this.set_row_data = function(id, data)
 	{
 		if (typeof(this._rows_hash[id]) == $undef) return;
@@ -932,16 +985,23 @@ SNavigator = function()
 		var row = this._rows_hash[id];
 		row.data = data;
 
+		var off = (this._multiple_select ? 1 : 0);
+
 		for (var i = 0; i < this._header.length; i++)
 		{
 			var hdr = this._header[i];
 			var fld = hdr.field;
 
 			var str = String(typeof(data[fld])==$undef ? '&nbsp;' : (typeof(hdr.format)==$undef ? data[fld] : hdr.format(data[fld], data)));
-			row.dom.childNodes[i].innerHTML = (str=='' ? '&nbsp;' : str);
+			row.dom.childNodes[i + off].innerHTML = (str=='' ? '&nbsp;' : str);
 
-			if (typeof(hdr.post_render) != $undef) hdr.post_render(row.dom.childNodes[i], data[fld], data);
+			if (typeof(hdr.post_render) != $undef) hdr.post_render(row.dom.childNodes[i + off], data[fld], data);
 		}
+	}
+
+	this.get_active_id = function()
+	{
+		return this._active_id;
 	}
 
 	this.set_active_id = function(id)
@@ -1049,7 +1109,107 @@ SNavigator = function()
 	{
 		return this._sort_field;
 	}
-};
+
+	this.get_selected_ids = function()
+	{
+		var res = [];
+
+		for (var i = 0; i < this._rows.length; i++)
+		{
+			var row = this._rows[i];
+
+			if (row.dom.childNodes[0].childNodes[0].checked) {
+				res.push(row.data[this._id_field]);
+			}
+		}
+
+		return res;
+	}
+
+	// selected == true by default
+	this.select_by_id = function(id, selected)
+	{
+		if (typeof(this._rows_hash[id]) == $undef) return;
+
+		this._rows_hash[id].dom.childNodes[0].childNodes[0].checked = (typeof(selected)==$undef || selected);
+		SNavigator._fix_chb(this._rows_hash[id].dom.childNodes[0]);
+	}
+
+	this.set_selected_ids = function(ids)
+	{
+		var ids_hash = {};
+		for (var i = 0; i < ids.length; i++) ids_hash[ids[i]] = true;
+
+		for (var i = 0; i < this._rows.length; i++)
+		{
+			var row = this._rows[i];
+			row.dom.childNodes[0].childNodes[0].checked = (typeof(ids_hash[row.data[this._id_field]]) != $undef);
+		}
+
+		SNavigator._fix_chb(this._rows[0].dom.childNodes[0]);
+	}
+}
+
+SNavigator._fix_chb = function(el)
+{
+	if (el.tagName.toLowerCase() == 'div')
+	{
+		var checked = el.getElementsByTagName('input')[0].checked;
+		var rows = el.parentNode.parentNode.getElementsByTagName('div')[0].getElementsByTagName('tr');
+
+		for (var i = 2; i < rows.length; i++) {
+			rows[i].childNodes[0].childNodes[0].checked = checked;
+		}
+	}
+	else
+	{
+		var rows = el.parentNode.parentNode.getElementsByTagName('tr');
+		var checkedCount = 0;
+
+		for (var i = 2; i < rows.length; i++) {
+			if (rows[i].childNodes[0].childNodes[0].checked) {
+				checkedCount++;
+			}
+		}
+
+		var headerChb = el.parentNode.parentNode.parentNode.parentNode.parentNode.getElementsByTagName('div')[1].childNodes[0].childNodes[0];
+		headerChb.checked = (checkedCount == rows.length - 2);
+	}
+}
+
+SNavigator.on_chb_td_click = function(ev)
+{
+	if (!ev) ev = event;
+
+	var chb = this.getElementsByTagName('input')[0];
+	chb.checked = !chb.checked;
+	SNavigator._fix_chb(this);
+
+	if (ev.stopPropagation) ev.stopPropagation();
+	if (ev.preventDefault) ev.preventDefault();
+	ev.cancelBubble = true;
+
+	return false;
+}
+
+SNavigator.on_chb_click = function(ev)
+{
+	if (!ev) ev = event;
+
+	var element = this;
+	var checked = this.checked;
+
+	setTimeout(function() {
+		element.checked = checked;
+		SNavigator._fix_chb(element.parentNode);
+	}, 1);
+
+	if (ev.stopPropagation) ev.stopPropagation();
+	if (ev.preventDefault) ev.preventDefault();
+	ev.cancelBubble = true;
+
+	return false;
+}
 
 SNavigator.on_mouse_over = function()
 {
@@ -1533,7 +1693,7 @@ SPager = function()
 		var page = Math.max(0, Math.min(this._curr_page, this._pages_count-1));
 		var cells_count = Math.max(1, Math.min(this._show_pages, this._pages_count));
 		var thumb_pages = Math.max(1, this._pages_count - cells_count);
-		var min_page = Math.floor(this._pos * thumb_pages / this._max_pos);
+		var min_page = Math.floor(this._pos * thumb_pages / Math.max(1, this._max_pos));
 		var cells = this._dom.childNodes[0].childNodes[0].childNodes[0].childNodes;
 
 		for (var i = 0; i < cells_count; i++)
@@ -1588,7 +1748,7 @@ SPager = function()
 	{
 		this._pages_count = Math.max(1, pages);
 
-		this._thumb_wdt = Math.floor(Math.max(1, this._show_pages * 100 / this._pages_count));
+		this._thumb_wdt = Math.floor(Math.max(1, Math.min(100, this._show_pages * 100 / this._pages_count)));
 		this._max_pos = 100 - this._thumb_wdt;
 		if (this._pos > this._max_pos) { this._pos = this._max_pos; }
 

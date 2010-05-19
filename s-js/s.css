@@ -359,6 +359,10 @@
 	_cursor: hand;
 }
 
+.s-nav-tbl .s-nav-chb {
+	width: 24px;
+}
+
 .s-nav-tbl td.s-nav-first {
 	border-left: 1px solid #FFFFFF;
 }
