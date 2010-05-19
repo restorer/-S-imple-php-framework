@@ -730,7 +730,7 @@ SNavigator = function()
 		res.push('</tr>');
 
 		res.push(this._rows.length ? '<tr class="s-nav-empty" style="display:none">' : '<tr class="s-nav-empty">');
-		res.push('<td colspan="{0}">{1}</td>'.format(this._header.length, SL.get('interface/navigator/empty-text')));
+		res.push('<td colspan="{0}">{1}</td>'.format(this._header.length + (this._multiple_select ? 1 : 0), SL.get('interface/navigator/empty-text')));
 		res.push('</tr>');
 
 		for (var i = 0; i < this._rows.length; i++)
