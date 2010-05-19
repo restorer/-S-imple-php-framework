@@ -130,19 +130,16 @@ SFormRow = function()
 
 	this.render = function(container, row_cls)
 	{
-		this.row_tr = S.create('TR', { vAlign: 'top' });
-		if (row_cls != '') this.row_tr.className = row_cls;
+		this.row_tr = S.create('TR', { vAlign: 'top', className: 's-form-e ' + row_cls });
 		container.appendChild(this.row_tr);
 
 		if (this.render_title)
 		{
-			this.title.element = S.create('TH', { innerHTML: (this.title.value=='' ? '&nbsp;' : this.parent.encode(this.title.value) + ':') });
+			this.title.element = S.create('TH', { className: 's-form-e ' + this.title_cls, innerHTML: (this.title.value=='' ? '&nbsp;' : this.parent.encode(this.title.value) + ':') });
 			this.row_tr.appendChild(this.title.element);
-
-			if (this.title_cls != '') this.title.element.className = this.title_cls;
 		}
 
-		var input_td = S.create('TD');
+		var input_td = S.create('TD', { className: 's-form-e' });
 		this.row_tr.appendChild(input_td);
 
 		if (!this.render_title) input_td.colSpan = 2;
@@ -171,14 +168,14 @@ SFormRow = function()
 		}
 
 		this.info.element = S.create('SPAN',
-			{ className:'s-form-info', innerHTML:this.parent.encode(this.info.value) },
+			{ className:'s-form-e s-form-info', innerHTML:this.parent.encode(this.info.value) },
 			{ display:(this.info.value=='' ? 'none' : '') }
 		);
 
 		input_td.appendChild(this.info.element);
 
 		this.error.element = S.create('DIV',
-			{ className:'s-form-error-info', innerHTML:this.parent.encode(this.error.value) },
+			{ className:'s-form-e s-form-error-info', innerHTML:this.parent.encode(this.error.value) },
 			{ display:(this.error.value=='' ? 'none' : '') }
 		);
 
@@ -488,36 +485,36 @@ SFormView = function()
 		this.form_table = S.create('TABLE', { cellSpacing:0, className:'s-form' });
 		container.appendChild(this.form_table);
 
-		this.title.element = S.create('CAPTION', { innerHTML:this.encode(this.title.value) });
+		this.title.element = S.create('CAPTION', { className:'s-form-e', innerHTML:this.encode(this.title.value) }, { display:(this.title.value == '' ? 'none' : '') });
 		this.form_table.appendChild(this.title.element);
 
-		var tbody = S.create('TBODY');
+		var tbody = S.create('TBODY', { className:'s-form-e' });
 		this.form_table.appendChild(tbody);
 
-		this.error_tr = S.create('TR', null, { display:'none' });
+		this.error_tr = S.create('TR', { className:'s-form-e' }, { display:'none' });
 		tbody.appendChild(this.error_tr);
 
-		this.error_td = S.create('TD', { colSpan:2, className:'s-form-error' });
+		this.error_td = S.create('TD', { colSpan:2, className:'s-form-e s-form-error' });
 		this.error_tr.appendChild(this.error_td);
 
-		this.info_tr = S.create('TR', null, { display:'none' });
+		this.info_tr = S.create('TR', { className:'s-form-e' }, { display:'none' });
 		tbody.appendChild(this.info_tr);
 
-		this.info_td = S.create('TD', { colSpan:2, className:'s-form-info-msg' });
+		this.info_td = S.create('TD', { colSpan:2, className:'s-form-e s-form-info-msg' });
 		this.info_tr.appendChild(this.info_td);
 
 		for (var i = 0; i < this.rows.length; i++) this.rows[i].render(tbody, (i==0 ? 's-form-first' : ''));
 
-		this.buttons_row = S.create('TR', { className:'s-form-buttons' });
+		this.buttons_row = S.create('TR', { className:'s-form-e s-form-buttons' });
 		tbody.appendChild(this.buttons_row);
 
-		var buttons_td = S.create('TD', { colSpan:2, align:'center' });
+		var buttons_td = S.create('TD', { className:'s-form-e', colSpan:2, align:'center' });
 		this.buttons_row.appendChild(buttons_td);
 
 		for (var i = 0; i < this.buttons.length; i++)
 		{
 			this.buttons[i].render(buttons_td);
-			if (i != this.buttons.length-1) buttons_td.appendChild(S.create('SPAN', { innerHTML:'&nbsp;' }));
+			if (i != this.buttons.length-1) buttons_td.appendChild(S.create('SPAN', { className:'s-form-e', innerHTML:'&nbsp;' }));
 		}
 	}
 

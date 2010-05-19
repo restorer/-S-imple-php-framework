@@ -719,7 +719,7 @@ S = function()
 		html: function(str)
 		{
 			if (typeof(str) == $undef) throw $new(SException, 'str is undefined');
-			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');	// "
+			return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');	// "
 		},
 
 		unhtml: function(str)

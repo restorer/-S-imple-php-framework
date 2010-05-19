@@ -312,25 +312,34 @@ SInput = function()
 			var cols = (typeof(this._params.cols)==$undef ? 40 : this._params.cols);
 
 			this._dom = S.build([
+				'<div class="s-inp-wrap">',
 				'<textarea class="s-inp s-inp-textarea" name="{0}" rows="{1}" cols="{2}"'.format(this._name, rows, cols),
 					' onfocus="S.add_class(this,\'s-inp-focus\')"',
 					' onblur="S.rm_class(this,\'s-inp-focus\')">',
-				'</textarea>'
+				'</textarea>',
+				'</div>'
 			].join(''))[0];
 		}
 		else
 		{
 			this._dom = S.build([
+				'<div class="s-inp-wrap">',
 				'<input class="s-inp" type="{0}" name="{1}"'.format(this._type, this._name),
 					' onfocus="S.add_class(this,\'s-inp-focus\')"',
-					' onblur="S.rm_class(this,\'s-inp-focus\')" />'
+					' onblur="S.rm_class(this,\'s-inp-focus\')" />',
+				'</div>'
 			].join(''))[0];
 		}
 	}
 
+	this.dom_input = function()
+	{
+		return this._dom.childNodes[0];
+	}
+
 	this._update_dom = function()
 	{
-		this._dom.value = this._value;
+		this.dom_input().value = this._value;
 	}
 
 	this.set_type = function(type)
@@ -345,12 +354,16 @@ SInput = function()
 
 	this.get_value = function()
 	{
-		return this._do_get('value');
+		return (this._dom === null ? this._value : this.dom_input().value);
 	}
 
 	this.set_value = function(value)
 	{
-		this._do_set('value', value);
+		if (this._dom === null) {
+			this._value = value;
+		} else {
+			this.dom_input().value = value;
+		}
 	}
 };
 
@@ -1031,6 +1044,10 @@ SNavigator = function()
 		if (this._dom != null) {
 			for (var i = 0; i < this._rows.length; i++) {
 				this._tbody.removeChild(this._rows[i].dom);
+			}
+
+			if (this._multiple_select) {
+				this._div_header.childNodes[0].childNodes[0].checked = false;
 			}
 		}
 

@@ -189,6 +189,11 @@
  * Input
  */
 
+.s-inp-wrap {
+	position: relative;
+	top: -3px;
+}
+
 .s-inp {
 	height: 21px;
 	line-height: 19px;
@@ -198,7 +203,7 @@
 	font-size: 12px;
 	padding: 2px 2px 0 2px;
 	_padding-top: 0;
-	vertical-align: -1px;
+	width: 98%;
 }
 
 .s-inp-focus {
@@ -430,27 +435,28 @@
 	background-color: #DFE8F6;
 }
 
-.s-form caption {
+.s-form caption.s-form-e {
 	text-align: left;
 	white-space: nowrap;
 	font-weight: bold;
 	background: #99BBE8 url(img/form-caption.gif) left top repeat-x;
 	border-left: 1px solid #99BBE8;
 	border-right: 1px solid #99BBE8;
-	padding: 0 5px;
+	padding: 2px 5px 0 5px; /* was: 0 5px */
 	color: #15428B;
 	height: 24px;
 	line-height: 24px;
+	margin-right: -2px;     /* for webkit */
 }
 
-.s-form th {
+.s-form th.s-form-e {
 	font-weight: normal;
 	text-align: left;
 	padding: 5px 0px 5px 15px;
 	white-space: nowrap;
 }
 
-.s-form td {
+.s-form td.s-form-e {
 	padding: 5px 20px 5px 15px;
 }
 
@@ -482,16 +488,16 @@
 	font-weight: bold;
 }
 
-.s-form-first th,
-.s-form-first td {
+.s-form-first th.s-form-e,
+.s-form-first td.s-form-e {
 	padding-top: 15px;
 }
 
-.s-form-buttons td {
+.s-form-buttons td.s-form-e {
 	padding-bottom: 15px;
 }
 
-.s-form table td {
+.s-form table td.s-form-e {
 	padding: 0;
 	font-size: 12px;
 }
