@@ -1,3 +1,8 @@
+/*
+ * [S]imple
+ * http://sourceforge.net/projects/zame-simple
+ */
+
 SL.set('interface/select_file', 'Select file ...', 'en');
 SL.set('interface/navigator/empty-text', 'No items to display', 'en');
 

@@ -1,3 +1,8 @@
+/*
+ * [S]imple
+ * http://sourceforge.net/projects/zame-simple
+ */
+
 SL.set('forms/validators/required', 'This field is required', 'en');
 SL.set('forms/validators/compare', 'Must match to {0}', 'en');
 SL.set('forms/validators/is_number', 'Must be number', 'en');

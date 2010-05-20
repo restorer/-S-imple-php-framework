@@ -1,3 +1,8 @@
+/*
+ * [S]imple
+ * http://sourceforge.net/projects/zame-simple
+ */
+
 $undef = 'undefined';
 $func = 'function';
 
