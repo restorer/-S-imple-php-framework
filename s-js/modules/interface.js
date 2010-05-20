@@ -1053,6 +1053,9 @@ SNavigator = function()
 
 		this._rows = [];
 		this._rows_hash = {};
+
+		this._update_empty_info();
+		this._update_header();
 	}
 
 	this.get_rows_count = function()
@@ -1136,7 +1139,7 @@ SNavigator = function()
 			var row = this._rows[i];
 
 			if (row.dom.childNodes[0].childNodes[0].checked) {
-				res.push(row.data[this._id_field]);
+				res.push(String(row.data[this._id_field]));
 			}
 		}
 
@@ -1649,6 +1652,27 @@ SDropDown = function()
 	this.set_value = function(value)
 	{
 		this._do_set('value', value);
+	}
+
+	this.clear_options = function()
+	{
+		while (this._dom.options.length > 0) {
+			this._dom.remove(0);
+		}
+	}
+
+	this.append_option = function(id, name)
+	{
+		this._dom.options[this._dom.options.length] = new Option(name, id);
+	}
+
+	this.set_options = function(options)
+	{
+		this.clear_options();
+
+		for (var i = 0; i < options.length; i++) {
+			this.append_option(options[i][0], options[i][1]);
+		}
 	}
 }
 

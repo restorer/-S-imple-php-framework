@@ -113,7 +113,8 @@ Array.prototype.last = function() {
 	return this[this.length - 1];
 }
 
-Array.prototype.apply_map = function(block) {
+Array.prototype.map_apply = function(block)
+{
 	for (var i = 0; i < this.length; i++) {
 		this[i] = block(this[i]);
 	}
@@ -121,7 +122,8 @@ Array.prototype.apply_map = function(block) {
 	return this;
 }
 
-Array.prototype.map = function(block) {
+Array.prototype.map = function(block)
+{
 	var res = [];
 
 	for (var i = 0; i < this.length; i++) {
@@ -131,7 +133,8 @@ Array.prototype.map = function(block) {
 	return res;
 }
 
-Array.prototype.reject = function(block) {
+Array.prototype.reject_apply = function(block)
+{
 	var ind = 0;
 
 	while (ind < this.length) {
@@ -145,8 +148,37 @@ Array.prototype.reject = function(block) {
 	return this;
 }
 
+Array.prototype.select = function(block)
+{
+	var res = [];
+
+	for (var i = 0; i < this.length; i++) {
+		if (block(this[i])) {
+			res.push(this[i]);
+		}
+	}
+
+	return res;
+}
+
 Array.prototype.empty = function() {
 	return (this.length == 0);
+}
+
+Array.prototype.to_hash = function()
+{
+	var res = {};
+	for (var i = 0; i < this.length; i++) res[this[i]] = true;
+	return res;
+}
+
+Array.prototype.append = function(list)
+{
+	for (var i = 0; i < list.length; i++) {
+		this.push(list[i]);
+	}
+
+	return this;
 }
 
 Date.getNow = function() {
@@ -231,42 +263,6 @@ S = function()
 	var in_error = false;
 
 	return {
-		array_map: function(arr, func)
-		{
-			var res = [];
-			for (var i = 0; i < arr.length; i++) res.push(func(arr[i]));
-			return res;
-		},
-
-		array_to_hash: function(arr)
-		{
-			var res = {};
-			for (var i = 0; i < arr.length; i++) res[arr[i]] = true;
-			return res;
-		},
-
-		array_append: function(arr, append_arr)
-		{
-			for (var i = 0; i < append_arr.length; i++) {
-				arr.push(arr_append[i]);
-			}
-
-			return arr;
-		},
-
-		array_select: function(arr, func)
-		{
-			var res = [];
-
-			for (var i = 0; i < arr.length; i++) {
-				if (func(arr[i])) {
-					res.push(arr[i]);
-				}
-			}
-
-			return res;
-		},
-
 		is_ie: (document.all && !window.opera),
 
 		error: function(msg)
@@ -507,7 +503,7 @@ S = function()
 						try {
 							callback_func((req.status==200 || req.status==304) ? req.responseText : null)
 						} catch (ex) {
-							alert(SException.get_ex_stack_trace(ex).join("\n"));
+							S.error(SException.get_ex_stack_trace(ex).join("\n"));
 						}
 					}
 				}
@@ -774,10 +770,10 @@ S = function()
 
 		add_class: function(element, className)
 		{
-			var cls = S.array_select(String(element.className).split(' '), function(s){ return !s.empty(); });
-			var ncls = S.array_select(String(className).split(' '), function(s){ return !s.empty(); });
+			var cls = String(element.className).split(' ').select(function(s){ return !s.empty(); });
+			var ncls = String(className).split(' ').select(function(s){ return !s.empty(); });
 
-			var already = S.array_to_hash(cls);
+			var already = cls.to_hash();
 
 			for (var i = 0; i < ncls.length; i++)
 			{
@@ -795,8 +791,8 @@ S = function()
 
 		rm_class: function(element, className)
 		{
-			var cls = S.array_select(String(element.className).split(' '), function(s){ return !s.empty(); });
-			var rcls = S.array_to_hash(S.array_select(String(className).split(' '), function(s){ return !s.empty(); }));
+			var cls = String(element.className).split(' ').select(function(s){ return !s.empty(); });
+			var rcls = String(className).split(' ').select(function(s){ return !s.empty(); }).to_hash();
 
 			var res = [];
 
@@ -811,8 +807,8 @@ S = function()
 
 		has_class: function(element, className)
 		{
-			var cls = S.array_to_hash(S.array_select(String(element.className).split(' '), function(s){ return !s.empty(); }));
-			var hcls = S.array_select(String(className).split(' '), function(s){ return !s.empty(); });
+			var cls = String(element.className).split(' ').select(function(s){ return !s.empty(); }).to_hash();
+			var hcls = String(className).split(' ').select(function(s){ return !s.empty(); });
 
 			for (var i = 0; i < hcls.length; i++) {
 				if (typeof(cls[hcls[i]]) == $undef) {

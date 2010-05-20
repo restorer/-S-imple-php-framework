@@ -128,6 +128,15 @@ SFormRow = function()
 		}
 	}
 
+	this.set_options = function(options)
+	{
+		this.options = options;
+
+		if (this.input.element != null) {
+			this.input.element.set_options(options);
+		}
+	}
+
 	this.render = function(container, row_cls)
 	{
 		this.row_tr = S.create('TR', { vAlign: 'top', className: 's-form-e ' + row_cls });
@@ -334,7 +343,7 @@ SFormButton = function()
 		this.handler = handler_func;
 	}
 
-	this.click_handler = function()
+	this.press = function()
 	{
 		if (this.validate && !this.parent.validate()) return;
 		if (this.handler != null) this.handler();
@@ -342,7 +351,7 @@ SFormButton = function()
 
 	this.render = function(container)
 	{
-		this.element = $new(SButton, this.title, this.delegate_ne(this.click_handler));
+		this.element = $new(SButton, this.title, this.delegate_ne(this.press));
 		this.element.render(container);
 	}
 
