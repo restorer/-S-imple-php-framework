@@ -631,7 +631,7 @@ SNavigator = function()
 {
 	$extend(this, SElement);
 
-	this._id_field = 'id';
+	this._id_field = '';
 	this._header = [];
 	this._rows = [];
 	this._active_id = '';
@@ -663,14 +663,15 @@ SNavigator = function()
 	 * header example:
 	 * [{ title: 'Title', sortable: false, field: 'field', post_renderer: function(domElement, field, row) {} }]
 	 */
-	this.init = function(header, click_handler, max_height, fixed_height, use_pager, multiple_select)
+	this.init = function(header, click_handler, max_height, fixed_height, use_pager, multiple_select, id_field)
 	{
 		this._header = header;
 		this._click_handler = (typeof(click_handler)==$undef ? null : click_handler);
 		this._max_height = ((typeof(max_height)==$undef || max_height==null) ? 0 : max_height);
 		this._fixed_height = ((typeof(fixed_height)==$undef || fixed_height==null) ? false : fixed_height);
 		this._use_pager = ((typeof(use_pager)==$undef || use_pager==null) ? false : use_pager);
-		this._multiple_select = ((typeof(multiple_select)==$undef || multiple_select==null) ? false: multiple_select);
+		this._multiple_select = ((typeof(multiple_select)==$undef || multiple_select==null) ? false : multiple_select);
+		this._id_field = ((typeof(id_field)==$undef || id_field==null) ? 'id' : id_field);
 	}
 
 	this._get_sort_arr = function(dir)
