@@ -921,7 +921,7 @@ S = function()
 
 		escape: function(str)
 		{
-			return escape(str).replace(/\+/g, '%2B');
+			return encodeURIComponent(String(str));
 		},
 
 		call: function(method_path, params)
