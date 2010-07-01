@@ -135,7 +135,7 @@ class SDBMySql extends SDBBase
 
 		if ($res === true) {
 			if (DEBUG) dwrite("**\"{$cmd->command}\"** is not a SELECT query", S_ERROR);
-			return array();
+			return null;
 		}
 
 		if ($row = mysql_fetch_assoc($res)) $fld = first_value($row);
