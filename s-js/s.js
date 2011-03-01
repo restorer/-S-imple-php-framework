@@ -186,6 +186,20 @@ Array.prototype.append = function(list)
 	return this;
 }
 
+if (typeof([].indexOf) == $undef)
+{
+	Array.prototype.indexOf = function(item)
+	{
+		for (var i = 0; i < this.length; i++) {
+			if (this[i] == item) {
+				return i;
+			}
+		}
+
+		return -1;
+	}
+}
+
 Date.getNow = function() {
 	return (new Date());
 }
@@ -269,6 +283,25 @@ S = function()
 
 	return {
 		is_ie: (document.all && !window.opera),
+
+		hash_append: function(hash_a, hash_b)
+		{
+		    var res = {};
+
+		    for (var k in hash_a) {
+		        if (hash_a.hasOwnProperty(k)) {
+		            res[k] = hash_a[k];
+		        }
+		    }
+
+		    for (var k in hash_b) {
+		        if (hash_b.hasOwnProperty(k)) {
+		            res[k] = hash_b[k];
+		        }
+		    }
+
+		    return res;
+		},
 
 		error: function(msg)
 		{
@@ -479,8 +512,8 @@ S = function()
 				try
 				{
 					req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-					req.setRequestHeader('Content-length', data.length);
-					req.setRequestHeader('Connection', 'close');
+					// req.setRequestHeader('Content-length', data.length); - chrome says that this is unsafe header
+					// req.setRequestHeader('Connection', 'close'); - chrome says that this is unsafe header
 					req.send(data);
 				}
 				catch (ex) {}
@@ -508,7 +541,7 @@ S = function()
 						try {
 							callback_func((req.status==200 || req.status==304) ? req.responseText : null)
 						} catch (ex) {
-							S.error(SException.get_ex_stack_trace(ex).join("\n"));
+							S.error(SException.get_readable_error(ex));
 						}
 					}
 				}
@@ -1058,6 +1091,89 @@ S = function()
 			{
 				return el.selectionEnd;
 			}
+		},
+
+		set_cookie: function(name, value, expires, path)
+		{
+			var res = [S.escape(name) + '=' + S.escape(value)];
+
+			if (typeof(expires)!=$undef && expires)
+			{
+				if (typeof(expires.match) != $undef)
+				{
+					var mt = expires.match(/(\+|\-)\s*(\d+)\s*([a-z]+)/i);
+
+					if (mt)
+					{
+						var mult = (mt[1] === '-' ? -1 : 1);
+						var num = Number(mt[2]);
+
+						switch (mt[3])
+						{
+							case 'day':
+							case 'days':
+								num *= 24;
+								// no break here
+
+							case 'hour':
+							case 'hours':
+								num *= 60;
+								// no break here
+
+							case 'min':
+							case 'mins':
+							case 'minute':
+							case 'minutes':
+								num *= 60;
+								// no break here
+
+							case 'sec':
+							case 'secs':
+							case 'second':
+							case 'seconds':
+								num *= 1000;
+						}
+
+						var dt = new Date();
+						dt.setTime(dt.getTime() + num * mult);
+
+						res.push('expires=' + dt.toGMTString());
+					}
+				}
+				else
+				{
+					res.push('expires=' + expires.toGMTString());
+				}
+			}
+
+			if (typeof(path)!=$undef && path) {
+				res.push('path=' + S.escape(path));
+			} else {
+				res.push('path=/');
+			}
+
+			document.cookie = res.join('; ');
+		},
+
+		rm_cookie: function(name)
+		{
+			S.set_cookie(name, '', '-1 day');
+		},
+
+		get_cookie: function(name)
+		{
+			var list = document.cookie.split(';');
+
+			for (var i = 0; i < list.length; i++)
+			{
+				var pair = list[i].trim().split('=');
+
+				if (unescape(pair[0]) == name) {
+					return unescape(pair[1]);
+				}
+			}
+
+			return null;
 		}
 	};
 }();
@@ -1139,7 +1255,7 @@ function SException()
 
 	this.init = function(message)
 	{
-		this.stack = SException.get_stack_trace().slice(1);
+		this.stack = SException.get_stack_trace().slice(4);
 		if (typeof(message) != $undef) this.message = message;
 	}
 
@@ -1149,9 +1265,18 @@ function SException()
 	}
 }
 
+SException.get_readable_error = function(ex)
+{
+    if (ex instanceof SException) {
+        return ex.toString();
+    } else {
+        return SException.get_ex_stack_trace(ex).join("\n");
+    }
+}
+
 SException.get_ex_stack_trace = function(ex)
 {
-	if (ex.stack)
+    if (ex.stack)
 	{
 		var lines = ex.stack.split('\n').slice(1);
 		if (lines.length>0 && lines[lines.length-1].length==0) lines = lines.slice(0, lines.length-1);
@@ -1173,7 +1298,7 @@ SException.get_ex_stack_trace = function(ex)
 	}
 	else if (window.opera)
 	{
-		var lines = e.message.split('\n');
+		var lines = ex.message.split('\n');
 		var re = /Line\s+(\d+).*?in\s+(http\S+)(?:.*?in\s+function\s+(\S+))?/i;
 		var i, j, len;
 

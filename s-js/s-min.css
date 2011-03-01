@@ -1,0 +1,48 @@
+.s-mask {
+	position: fixed;
+	_position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	_height: auto;
+	z-index: 90000;
+	background-color: #000;
+	opacity: .5;
+	filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50);
+}
+
+.s-error {
+	position: fixed;
+	_position: absolute;
+	top: 0;
+	left: 0;
+	height: auto;
+	margin: 20px;
+	border: 5px solid red;
+	padding: 10px;
+	color: red;
+	font-family: Tahoma,Arial,sans-serif;
+	font-size: 14px;
+	background-color: #000;
+	z-index: 90010;
+	overflow: auto;
+	width: auto;
+	max-height: 500px;
+	max-width: 1000px;
+}
+
+.s-error-close {
+	background-color: red;
+	color: #FFF;
+	padding-left: 0.2em;
+	padding-right: 0.3em;
+	font-weight: bold;
+	cursor: pointer;
+	_cursor: hand;
+}
+
+.s-error-title {
+	white-space: nowrap;
+	padding-right: 10px;
+}

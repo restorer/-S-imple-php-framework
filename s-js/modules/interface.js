@@ -512,6 +512,11 @@ SCheckBox = function()
 		this._value = value;
 		if (this._dom_el != null) this._dom_el.checked = (value==this._params.checked_value ? true : false);
 	}
+
+	this.dom_el = function()
+	{
+		return this._dom_el;
+	}
 }
 
 SToolbar = function()
@@ -661,7 +666,7 @@ SNavigator = function()
 	 * (max_height>0 && fixed_height==false) may incorretly work under IE
 	 *
 	 * header example:
-	 * [{ title: 'Title', sortable: false, field: 'field', post_renderer: function(domElement, field, row) {} }]
+	 * [{ title: 'Title', sortable: false, field: 'field', format: function(field, row) {} }, post_render: function(domElement, field, row)]
 	 */
 	this.init = function(header, click_handler, max_height, fixed_height, use_pager, multiple_select, id_field)
 	{
@@ -712,6 +717,10 @@ SNavigator = function()
 
 			if (i == 0 && !this._multiple_select) th_cls = (th_cls + ' s-nav-first').trim();
 			if (i == this._header.length-1) th_cls = (th_cls + ' s-nav-last').trim();
+
+			if (typeof(this._header[i].cls)!=$undef && this._header[i].cls) {
+			    th_cls = (th_cls + ' ' + this._header[i].cls).trim();
+			}
 
 			res.push(th_cls=='' ? '<th>' : '<th class="{0}">'.format(th_cls));
 			var hdr_title = (this._header[i].title.length ? this._header[i].title : '&nbsp;');
@@ -803,6 +812,10 @@ SNavigator = function()
 			if (i == 0 && !this._multiple_select) h_cls = (h_cls + ' s-nav-first').trim();
 			if (i == this._header.length-1) h_cls = (h_cls + ' s-nav-last').trim();
 
+			if (typeof(this._header[i].cls)!=$undef && this._header[i].cls) {
+			    h_cls = (h_cls + ' ' + this._header[i].cls).trim();
+			}
+
 			res.push(h_cls=='' ? '<div>' : '<div class="{0}">'.format(h_cls));
 			var hdr_title = (this._header[i].title.length ? this._header[i].title : '&nbsp;');
 
@@ -860,7 +873,7 @@ SNavigator = function()
 			var hdr = this._div_header.childNodes[i];
 
 			var wdt = th.offsetWidth;
-			if (!S.is_ie) wdt -= 12;	// paddings and borders
+			wdt -= 12;	// paddings and borders
 
 			hdr.style.left = th.offsetLeft + 'px';
 			hdr.style.width = wdt + 'px';
@@ -1711,6 +1724,10 @@ SPager = function()
 
 	this._update_dom = function()
 	{
+		this._thumb_wdt = Math.floor(Math.max(1, Math.min(100, this._show_pages * 100 / this._pages_count)));
+		this._max_pos = 100 - this._thumb_wdt;
+		if (this._pos > this._max_pos) { this._pos = this._max_pos; }
+
 		var cells_count = Math.max(1, Math.min(this._show_pages, this._pages_count));
 		var res = '<table><tr>';
 		var perc = Math.floor(100 / cells_count);
@@ -1794,11 +1811,6 @@ SPager = function()
 	this.set_pages_count = function(pages)
 	{
 		this._pages_count = Math.max(1, pages);
-
-		this._thumb_wdt = Math.floor(Math.max(1, Math.min(100, this._show_pages * 100 / this._pages_count)));
-		this._max_pos = 100 - this._thumb_wdt;
-		if (this._pos > this._max_pos) { this._pos = this._max_pos; }
-
 		if (this._dom != null) this._update_dom();
 	}
 }

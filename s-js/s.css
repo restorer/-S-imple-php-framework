@@ -1,16 +1,18 @@
 /*
  * [S]imple
  * http://sourceforge.net/projects/zame-simple
+ *
+ * To work correctly in IE, doctype must be "XHTML 1.0 Strict"
  */
 
 .s-mask {
 	position: fixed;
-	_position: absolute;
+	*position: absolute;
 	top: 0;
 	left: 0;
 	width: 100%;
 	height: 100%;
-	_height: auto;
+	*height: auto;
 	z-index: 90000;
 	background-color: #000;
 	opacity: .5;
@@ -19,7 +21,7 @@
 
 .s-error {
 	position: fixed;
-	_position: absolute;
+	*position: absolute;
 	top: 0;
 	left: 0;
 	height: auto;
@@ -44,7 +46,7 @@
 	padding-right: 0.3em;
 	font-weight: bold;
 	cursor: pointer;
-	_cursor: hand;
+	*cursor: hand;
 }
 
 .s-error-title {
@@ -60,13 +62,13 @@
 	height: 21px;
 	display: inline-block;
 	zoom: 1;
-	_display: inline;
+	*display: inline;
 	position: relative;
 	padding: 0 3px;
 	cursor: pointer;
 	cursor: hand;
 	vertical-align: -1px;
-	_vertical-align: 1px;
+	*vertical-align: 1px;
 }
 
 .s-btn .s-btn-before, .s-tb-btn .s-btn-before {
@@ -81,10 +83,10 @@
 
 .s-btn .s-btn-inner, .s-tb-btn .s-btn-inner {
 	zoom: 1;
-	_display: inline;
+	*display: inline;
 	height: 21px;
 	line-height: 21px;
-	_line-height: 19px;
+	*line-height: 19px;
 	font-family: Tahoma, Arial;
 	font-size: 12px;
 	background: url(img/button.gif) 0 -42px repeat-x;
@@ -207,7 +209,7 @@
 	font-family: Tahoma, Arial;
 	font-size: 12px;
 	padding: 2px 2px 0 2px;
-	_padding-top: 0;
+	*padding-top: 0;
 	width: 98%;
 }
 
@@ -232,8 +234,8 @@
 	position: relative;
 	height: 21px;
 	display: inline-block;
-	_display: inline;
-	_zoom: 1;
+	*display: inline;
+	*zoom: 1;
 }
 
 .s-inp-file-label {
@@ -254,15 +256,15 @@
 	height: 100%;
 	width: auto;
 	opacity: 0;
-	_margin-left: -40px;
-	_filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);
+	*margin-left: -40px;
+	*filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);
 }
 
 .s-inp-file-text {
 	white-space: nowrap;
 	padding-left: 5px;
 	vertical-align: -2px;
-	_vertical-align: 2px;
+	*vertical-align: 2px;
 }
 
 /*
@@ -303,13 +305,13 @@
 	background-color: #FFF;
 	border: 1px solid #A9BFD3;
 	position: relative;
-	_zoom: 1;
+	*zoom: 1;
 }
 
 .s-nav .s-nav-hdr {
 	position: absolute;
 	top: 0;
-	_top: 1px;
+	*top: 1px;
 	left: 0;
 	height: 24px;
 }
@@ -326,11 +328,12 @@
 	border-bottom: 1px solid #D0D0D0;
 	padding: 4px 5px 0 5px;
 	height: 19px;
-	_height: 24px;
 }
 
 .s-nav .s-nav-wrap {
 	overflow: auto;
+	*overflow-y: auto;
+	*overflow-x: hidden;
 }
 
 .s-nav-wrap .s-nav-tbl {
@@ -350,7 +353,7 @@
 	color: #000;
 	text-decoration: underline;
 	cursor: pointer;
-	_cursor: hand;
+	*cursor: hand;
 }
 
 .s-nav-tbl th {
@@ -366,7 +369,7 @@
 	border-top: 1px solid #FFFFFF;
 	border-bottom: 1px solid #EDEDED;
 	cursor: pointer;
-	_cursor: hand;
+	*cursor: hand;
 }
 
 .s-nav-tbl .s-nav-chb {
@@ -426,7 +429,6 @@
 	background: #A9BFD3;
 	padding: 5px;
 	height: 32px;
-	_height: 42px;
 }
 
 /*
@@ -553,7 +555,7 @@
 	text-align: center;
 	text-decoration: underline;
 	cursor: pointer;
-	_cusror: hand;
+	*cusror: hand;
 }
 
 .s-pager td.s-pager-sel {
@@ -572,7 +574,7 @@
 	height: 8px;
 	background-color: #DFE8F6;
 	cursor: pointer;
-	_cursor: hand;
+	*cursor: hand;
 }
 
 .s-pager-thumb {

@@ -9,6 +9,7 @@
  */
 
 require_once(S_BASE.'web/template.php');
+require_once(S_BASE.'web/control.php');
 require_once(S_BASE.'web/include_control.php');
 
 ##
