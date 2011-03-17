@@ -59,6 +59,8 @@ abstract class SDBBase
 	##
 	protected $tables_columns = array();
 
+	protected $last_affected = 0;
+
 	##
 	# = public void call_init_hook()
 	##
@@ -140,7 +142,7 @@ abstract class SDBBase
 				for (;$pos < $len; $pos++)
 				{
 					$ch = $sql{$pos};
-					if (($ch<'a' || $ch>'z') && ($ch<'A' || $ch>'Z') && $ch!='_') break;
+					if (($ch<'0' || $ch>'9') && ($ch<'a' || $ch>'z') && ($ch<'A' || $ch>'Z') && $ch!='_') break;
 
 					$name .= $ch;
 				}
@@ -399,6 +401,7 @@ abstract class SDBBase
 		{
 			$t1 = get_microtime();
 			$res = $this->run_query($sql, $type);
+			$this->last_affected = ($type != SDBBase::Select ? $res['affected'] : $res['selected']);
 			$t2 = get_microtime();
 
 			if ($res['error'])
@@ -413,7 +416,11 @@ abstract class SDBBase
 				dwrite("**Success [** $sql **] {$rows_str}** (".number_format($dt, 8).")", ($dt<0.1 ? S_SUCCESS : S_ACCENT));
 			}
 		}
-		else { $res = $this->run_query($sql, $type); }
+		else
+		{
+			$res = $this->run_query($sql, $type);
+			$this->last_affected = ($type != SDBBase::Select ? $res['affected'] : $res['selected']);
+		}
 
 		return $res['result'];
 	}

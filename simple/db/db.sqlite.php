@@ -103,6 +103,7 @@ class SDBSQLite extends SDBBase
 	public function execute($cmd)
 	{
 		$res = $this->query($cmd, SDBBase::Execute);
+		return $this->last_affected;
 	}
 
 	public function insert($cmd)

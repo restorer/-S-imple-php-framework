@@ -113,6 +113,7 @@ class SAjaxPage extends SPage
 		if (isset($res)) echo SJson::serialize($res);
 
 		$this->s_ajax_page_save_log();
+		exit();
 	}
 }
 ##

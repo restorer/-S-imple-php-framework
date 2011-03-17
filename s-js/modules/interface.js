@@ -1,4 +1,27 @@
 /*
+ * MIT License (http://www.opensource.org/licenses/mit-license.php)
+ *
+ * Copyright (c) 2007, Slava Tretyak (aka restorer)
+ * Zame Software Development (http://zame-dev.org)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
  * [S]imple
  * http://sourceforge.net/projects/zame-simple
  */
@@ -428,7 +451,7 @@ SInputFile = function()
 
 	this.dom_input = function()
 	{
-		return null;
+		return this._dom_el;
 	}
 
 	this.get_value = function()
@@ -783,8 +806,9 @@ SNavigator = function()
 		}
 
 		res.push('</table>');
-		res.push('</div>');
+		// res.push('</div>');	// s-nav-wrap
 
+		/*
 		if (this._use_pager)
 		{
 			res.push('<div class="s-nav-pager"></div>');
@@ -795,6 +819,7 @@ SNavigator = function()
 			this._pager.set_curr_page(this._curr_page);
 			this._pager.on_page_changed = this._page_handler;
 		}
+		*/
 
 		res.push('<div class="s-nav-hdr">');
 
@@ -828,8 +853,21 @@ SNavigator = function()
 			res.push('</div>');
 		}
 
-		res.push('</div>');
-		res.push('</div>');
+		res.push('</div>');		// s-nav-hdr
+		res.push('</div>');		// s-nav-wrap
+
+		if (this._use_pager)
+		{
+			res.push('<div class="s-nav-pager"></div>');
+
+			this._pager = $new(SPager)
+			this._pager.set_show_pages(this._show_pages);
+			this._pager.set_pages_count(this._pages_count);
+			this._pager.set_curr_page(this._curr_page);
+			this._pager.on_page_changed = this._page_handler;
+		}
+
+		res.push('</div>');		// s-nav
 
 		this._dom = S.build(res.join(''))[0];
 	}
@@ -899,7 +937,7 @@ SNavigator = function()
 		this._row_header = this._tbody.childNodes[0];
 		this._row_empty = this._tbody.childNodes[1];
 
-		this._div_header = this._dom.childNodes[this._use_pager ? 2 : 1];
+		this._div_header = this._dom.childNodes[0].childNodes[1];
 		this._div_pager = (this._use_pager ? this._dom.childNodes[1] : null);
 
 		if (this._use_pager) {
@@ -1194,7 +1232,7 @@ SNavigator._fix_chb = function(el)
 	if (el.tagName.toLowerCase() == 'div')
 	{
 		var checked = el.getElementsByTagName('input')[0].checked;
-		var rows = el.parentNode.parentNode.getElementsByTagName('div')[0].getElementsByTagName('tr');
+		var rows = el.parentNode.parentNode.getElementsByTagName('tr');
 
 		for (var i = 2; i < rows.length; i++) {
 			rows[i].childNodes[0].childNodes[0].checked = checked;
@@ -1211,7 +1249,7 @@ SNavigator._fix_chb = function(el)
 			}
 		}
 
-		var headerChb = el.parentNode.parentNode.parentNode.parentNode.parentNode.getElementsByTagName('div')[1].childNodes[0].childNodes[0];
+		var headerChb = el.parentNode.parentNode.parentNode.parentNode.getElementsByTagName('div')[0].childNodes[0].childNodes[0];
 		headerChb.checked = (checkedCount == rows.length - 2);
 	}
 }
@@ -1273,7 +1311,7 @@ SNavigator.on_click = function()
 
 SNavigator.on_sort_click = function()
 {
-	var el = this.parentNode.parentNode.parentNode.__s_el;
+	var el = this.parentNode.parentNode.parentNode.parentNode.__s_el;
 	var fld = this.getAttribute('__s_fld');
 
 	if (el._sort_field.field == fld) {

@@ -122,7 +122,6 @@ class STemplate
 		$pos = 0;
 		$res = '';
 		$text = '';
-		// $tmp_num = 0;
 
 		if ($buf != '')
 		{
@@ -141,7 +140,7 @@ class STemplate
 				}
 
 				$text .= substr($buf, $pos, $lb-$pos);
-				if (strlen($text)) { $res .= '$__s.=' . $this->escape($text) . ";\n"; }
+				if ($text != '') { $res .= '$__s.=' . $this->escape($text) . ";\n"; }
 				$text = '';
 
 				$pos = $lb + $lbra_sz;
@@ -329,16 +328,12 @@ class STemplate
 						}
 					}
 
-					/*
-					if ($post_process) {}
-					*/
-
 					$res .= $stat . "\n";
 				}
 			}
 		}
 
-		if (strlen($text)) $res .= '$__s.=' . $this->escape($text) . ";\n";
+		if ($text != '') $res .= '$__s.=' . $this->escape($text) . ";\n";
 
 		$res = 'function '.$funcname.'($__t,$__v){extract($__v);$__s=\'\';'."\n".$res.'return $__s;'."\n}\n";
 		return $res;

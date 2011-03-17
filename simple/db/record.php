@@ -351,10 +351,10 @@ class SRecord extends SEntity
 		$this->_init_fields();
 	}
 
-	protected function _process_filters($type)
+	protected function _process_filters($type, $params=array())
 	{
 		foreach ($this->_filters[$type] as $method_name) {
-			call_user_func(array($this, $method_name));
+			call_user_func_array(array($this, $method_name), $params);
 		}
 	}
 
@@ -545,24 +545,34 @@ class SRecord extends SEntity
 	}
 
 	##
-	# = public bool find_by_id(int $id)
-	# Find object by id. Return **true** when object is found, **false** otherwise
+	# = public bool find_by_pk(int $value)
+	# Find object by primary key. Return **true** when object is found, **false** otherwise
 	##
-	public function find_by_id($id)
+	public function find_by_pk($value)
 	{
 		$this->_init();
 
-		$cmd = new SDBCommand("SELECT * FROM @_db_table WHERE @_f_id=@id");
+		$cmd = new SDBCommand("SELECT * FROM @_db_table WHERE @_f_pk=@pk");
 		$cmd->set('_db_table', $this->_db_table, SDB::TableName);
-		$cmd->set('_f_id', $this->_db_key, SDB::FieldName);
-		$cmd->set('id', $id, SDB::Int);
+		$cmd->set('_f_pk', $this->_db_key, SDB::FieldName);
+		$cmd->set('pk', $value, SDB::Blob);
 
 		return $this->find_by_cmd($cmd);
 	}
 
 	##
+	# = public bool find_by_id(int $id)
+	# Alias for **find_by_pk**
+	##
+	public function find_by_id($id)
+	{
+		return $this->find_by_pk($id);
+	}
+
+	##
 	# = public void save()
-	# Save object. Related objects will **not** saved
+	# Save object. Related objects will **not** saved.
+	# Even if _use_dirty if true and object is not changed, save filters (before and after) will still be called.
 	# **TODO:** Save related objects automatically (has_one and has_many relations)
 	##
 	public function save()
@@ -570,34 +580,15 @@ class SRecord extends SEntity
 		$this->_init();
 		$this->_process_filters(SRECORD_FILTER_BEFORE_SAVE);
 
-		if ($this->is_new())
+		$was_new = $this->is_new();
+
+		if (!$this->is_dirty())
 		{
-			$fields = '';
-			$values = '';
-
-			foreach ($this->_db_fields as $k=>$dummy)
-			{
-				if ($k == $this->_db_key) continue;
-
-				$fields .= ($fields=='' ? '' : ',') . "@_f_{$k}";
-				$values .= ($values=='' ? '' : ',') . "@{$k}";
-			}
-
-			$cmd = new SDBCommand("INSERT INTO @_db_table ($fields) VALUES ($values)");
-			$cmd->set('_db_table', $this->_db_table, SDB::TableName);
-
-			foreach ($this->_db_fields as $k=>$ts)
-			{
-				if ($k == $this->_db_key) continue;
-
-				$cmd->set("_f_{$k}", $ts['f'], SDB::FieldName);
-				$cmd->set($k, $this->$k, $ts['t'], $ts['s']);
-			}
-
-			$keyname = $this->_db_key;
-			$this->$keyname = $cmd->insert();
+			$this->_process_filters(SRECORD_FILTER_AFTER_SAVE, array($was_new));
+			return;
 		}
-		else
+
+		if (!$was_new)
 		{
 			$fields = '';
 			$keyname = $this->_db_key;
@@ -608,7 +599,7 @@ class SRecord extends SEntity
 				$fields .= ($fields=='' ? '' : ',') . "@_f_{$k}=@_v_{$k}";
 			}
 
-			$cmd = new SDBCommand("UPDATE @_db_table SET $fields WHERE @_fk_id=@_k_id");
+			$cmd = new SDBCommand("UPDATE @_db_table SET $fields WHERE @_fk_id=@_k_id LIMIT 1");
 			$cmd->set('_db_table', $this->_db_table, SDB::TableName);
 			$cmd->set('_fk_id', $this->_db_key, SDB::FieldName);
 			$cmd->set('_k_id', $this->$keyname, SDB::Int);
@@ -621,7 +612,49 @@ class SRecord extends SEntity
 				$cmd->set("_v_{$k}", $this->$k, $ts['t'], $ts['s']);
 			}
 
-			$cmd->execute();
+			if (!$cmd->execute())
+			{
+				// is_new can return invalid values, if PK is not autoincremented, and PK is not null
+				// in such cases update will be executed instead of insert
+				// so if update failed, try to insert instead
+				// *but* update will also failed, if no fields is updated and _use_dirty is false
+				// so double-check for new record
+
+				$cmd = new SDBCommand("SELECT @_fk_id FROM @_db_table WHERE @_fk_id=@_k_id LIMIT 1");
+				$cmd->set('_db_table', $this->_db_table, SDB::TableName);
+				$cmd->set('_fk_id', $this->_db_key, SDB::FieldName);
+				$cmd->set('_k_id', $this->$keyname, SDB::Int);
+
+				$was_new = ($cmd->get_row() == null);
+			}
+		}
+
+		if ($was_new)
+		{
+			$fields = '';
+			$values = '';
+
+			foreach ($this->_db_fields as $k=>$dummy)
+			{
+				if ($k == $this->_db_key && $this->$k === null) continue;
+
+				$fields .= ($fields=='' ? '' : ',') . "@_f_{$k}";
+				$values .= ($values=='' ? '' : ',') . "@{$k}";
+			}
+
+			$cmd = new SDBCommand("INSERT INTO @_db_table ($fields) VALUES ($values)");
+			$cmd->set('_db_table', $this->_db_table, SDB::TableName);
+
+			foreach ($this->_db_fields as $k=>$ts)
+			{
+				if ($k == $this->_db_key && $this->$k === null) continue;
+
+				$cmd->set("_f_{$k}", $ts['f'], SDB::FieldName);
+				$cmd->set($k, $this->$k, $ts['t'], $ts['s']);
+			}
+
+			$keyname = $this->_db_key;
+			$this->$keyname = $cmd->insert();
 		}
 
 		if ($this->_use_dirty) {
@@ -630,7 +663,7 @@ class SRecord extends SEntity
 			}
 		}
 
-		$this->_process_filters(SRECORD_FILTER_AFTER_SAVE);
+		$this->_process_filters(SRECORD_FILTER_AFTER_SAVE, array($was_new));
 	}
 
 	##

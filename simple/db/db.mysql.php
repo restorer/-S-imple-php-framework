@@ -93,13 +93,15 @@ class SDBMySql extends SDBBase
 	public function execute($cmd)
 	{
 		$res = $this->query($cmd, SDBBase::Execute);
-		if ($res === false) return;
+		if ($res === false) return false;
 
 		if ($res !== true)
 		{
 			if (DEBUG_ENABLE) dwrite("**\"{$cmd->command}\"** is not a non-query", S_ERROR);
 			mysql_free_result($res);
 		}
+
+		return $this->last_affected;
 	}
 
 	public function insert($cmd)

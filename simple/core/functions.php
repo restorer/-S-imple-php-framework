@@ -272,8 +272,7 @@ function make_directory($dir, $mode=0777)
 ##
 function get_microtime()
 {
-	list($usec, $sec) = explode(' ', microtime());
-	return $usec + $sec;
+	return microtime(true);
 }
 
 ##
