@@ -254,6 +254,7 @@ function dump_str($var, $indent=0)
 ##
 # = void make_directory(string $dir, int $mode=0777)
 # Recursive make directory
+# mkdir with recursive=true in some cases set invalid file permissions
 ##
 function make_directory($dir, $mode=0777)
 {

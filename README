@@ -1,0 +1,22 @@
+Simple, but powerful php framework.
+Includes templates, database abstraction (like .NET SqlClient),
+ORM (like RoR ActiveRecord), page class (like .NET) and other classes.
+Main idea is to write less code and get more results.
+
+This version is PHP5 only, if you need PHP4 version (why? o_O) you
+can find it at sourceforge:
+
+* https://sourceforge.net/projects/zame-simple/
+* http://zame-simple.svn.sourceforge.net/viewvc/zame-simple/tags/latest-for-php4/
+
+At the current moment I think that framework requires refactoring,
+but it still nice to use it.
+
+Things to do:
+
+* Use PDO for db layer
+* Add model() method in SRecord (like Yii)
+* Use array-based configs
+* Custom exception classes (instead of using Exception in all cases)
+* Remove js_escape in favor of serialize
+* Use valid JSON for ajax-based pages (and send it with correct content-type)
