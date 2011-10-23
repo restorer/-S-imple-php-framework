@@ -59,13 +59,17 @@ class SAjaxPage extends SPage
 
 	function s_ajax_page_on_init()
 	{
-		if (!InPOST('__s_ajax_method')) return;
+		if (!InPOST('__s_ajax_method')) {
+			return;
+		}
+
+		$aj_method = _POST('__s_ajax_method');
 
 		if (array_key_exists(AJ_INIT, $this->_events))
 		{
 			foreach ($this->_events[AJ_INIT] as $method)
 			{
-				$res = call_user_func(array($this, $method));
+				$res = call_user_func(array($this, $method), $aj_method);
 
 				if ($this->_flow != PAGE_FLOW_NORMAL)
 				{
@@ -80,7 +84,7 @@ class SAjaxPage extends SPage
 		}
 
 		$this->_flow = PAGE_FLOW_BREAK;
-		$method = 'aj_' . _POST('__s_ajax_method');
+		$method = "aj_{$aj_method}";
 
 		if (!method_exists($this, $method))
 		{

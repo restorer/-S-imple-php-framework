@@ -20,7 +20,7 @@ class IndexPage extends SPage
 		Initiator::check_init();
 
 		/*
-		$dc =& new Documenter();
+		$dc = new Documenter();
 		$dc->parse(S_BASE.'data/json.php');
 		dwrite_msg('', dump_str($dc->blocks));
 		*/
